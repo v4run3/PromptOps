@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ project_name }} Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script defer src="/static/script.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            ⚡ <span>{{ project_name }}</span>
+        </div>
+
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Prompts</a>
+            <a href="#">Evaluation</a>
+            <a href="#">Models</a>
+            <a href="#">CI/CD Logs</a>
+            <a href="#">Settings</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <small>{{ version }}</small>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <input type="text" placeholder="Search prompts..." />
+            <button class="btn-primary">New Prompt</button>
+        </header>
+
+        <section class="hero">
+            <h1>Prompt Template Management</h1>
+            <p>Design • Evaluate • Deploy • Monitor</p>
+        </section>
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Active Prompts</h3>
+                <p id="activePrompts">--</p>
+            </div>
+
+            <div class="card">
+                <h3>Latest Eval Score</h3>
+                <p id="latestScore">--</p>
+            </div>
+
+            <div class="card">
+                <h3>Current Model</h3>
+                <p id="modelVersion">--</p>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

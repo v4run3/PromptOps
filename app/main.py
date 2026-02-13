@@ -1,15 +1,25 @@
 """FastAPI application entry-point for PromptOps."""
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from app.loader import load_prompt
+from app.routes import dashboard, api
 from app.schemas import PromptTemplate
 
 app = FastAPI(
-    title="PromptOps",
+    title="PromptOps Dashboard",
     description="CI/CD Pipeline for Prompt Template Management in LLM Applications",
     version="0.1.0",
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Include routes
+app.include_router(dashboard.router)
+app.include_router(api.router)
 
 
 @app.get("/health")
