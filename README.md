@@ -17,6 +17,15 @@ promptops/
 │   ├── main.py              # FastAPI entry-point
 │   ├── schemas.py           # Pydantic prompt models
 │   └── loader.py            # YAML prompt loader
+├── model/
+│   ├── __init__.py          # Model package
+│   ├── config.py            # Hyperparameter configuration
+│   ├── transformer.py       # From-scratch Encoder-Decoder Transformer (~10M params)
+│   ├── dataset.py           # SAMSum dataset loading & preprocessing
+│   ├── train.py             # Training loop with checkpointing
+│   └── inference.py         # Greedy decoding for summarization
+├── scripts/
+│   └── train_model.py       # CLI entry-point for training
 ├── prompts/
 │   └── example.yaml         # Example prompt template
 ├── eval/
@@ -24,7 +33,8 @@ promptops/
 │   └── evaluator.py         # Evaluation placeholder
 ├── tests/
 │   ├── __init__.py          # Tests package
-│   └── test_health.py       # Health & prompt tests
+│   ├── test_health.py       # Health & prompt tests
+│   └── test_model.py        # Transformer model unit tests
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # GitHub Actions CI
@@ -62,6 +72,33 @@ The API will be available at `http://127.0.0.1:8000`.
 ```bash
 python -m pytest tests/ -v
 ```
+
+## Model Training
+
+The project includes a custom ~10M parameter Encoder-Decoder Transformer for dialogue summarization, trained on the [SAMSum](https://huggingface.co/datasets/Samsung/samsum) dataset.
+
+### Train the Model
+
+```bash
+# Full training
+python scripts/train_model.py --epochs 10 --batch_size 32
+
+# Smoke test (fast, small subset)
+python scripts/train_model.py --epochs 2 --batch_size 4 --max_samples 100
+```
+
+### Model Architecture
+
+| Hyperparameter     | Value  |
+|--------------------|--------|
+| `d_model`          | 256    |
+| `n_heads`          | 4      |
+| `n_encoder_layers` | 4      |
+| `n_decoder_layers` | 4      |
+| `d_ff`             | 1024   |
+| `max_seq_len`      | 256    |
+| `dropout`          | 0.1    |
+| `vocab_size`       | 30,522 |
 
 ## Docker
 

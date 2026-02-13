@@ -20,3 +20,12 @@ env/
 
 # Docker
 *.log
+
+# Model checkpoints & data
+checkpoints/
+data/
+*.pt
+*.bin
+
+# HuggingFace cache
+.cache/
