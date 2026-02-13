@@ -1,0 +1,16 @@
+name: example
+version: "1.0"
+template: |
+  You are a helpful assistant.
+  Given the following context, answer the user's question.
+
+  Context: {context}
+  Question: {question}
+
+  Answer:
+input_variables:
+  - context
+  - question
+metadata:
+  author: promptops
+  description: A basic question-answering prompt template.
