@@ -38,7 +38,7 @@ class SAMSumDataset(Dataset):
         self.config = config or ModelConfig()
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-        raw = load_dataset("Samsung/samsum", split=split)
+        raw = load_dataset("samsum", split=split)
         if max_samples is not None:
             raw = raw.select(range(min(max_samples, len(raw))))
 
