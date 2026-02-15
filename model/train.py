@@ -15,7 +15,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import Adam
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import LambdaLR
 
 from model.config import ModelConfig
 from model.transformer import Seq2SeqTransformer
@@ -55,6 +55,17 @@ def _save_checkpoint(
     print(f"  ✓ Checkpoint saved → {path}")
 
 
+def get_scheduler(optimizer: Adam, warmup_steps: int, total_steps: int):
+    """Linear warmup + Cosine annealing scheduler."""
+    def lr_lambda(current_step: int):
+        if current_step < warmup_steps:
+            return float(current_step) / float(max(1, warmup_steps))
+        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        return 0.5 * (1.0 + math.cos(math.pi * progress))
+
+    return LambdaLR(optimizer, lr_lambda)
+
+
 # ---------------------------------------------------------------------------
 # Training / Validation Steps
 # ---------------------------------------------------------------------------
@@ -67,6 +78,7 @@ def train_one_epoch(
     optimizer: Adam,
     device: torch.device,
     epoch: int,
+    scheduler: LambdaLR,
 ) -> float:
     """Run a single training epoch and return the average loss."""
     model.train()
@@ -84,6 +96,7 @@ def train_one_epoch(
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
+        scheduler.step()
 
         total_loss += loss.item()
 
@@ -163,16 +176,17 @@ def train(
 
     # Optimiser + scheduler
     optimizer = Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.98), eps=1e-9)
-    scheduler = CosineAnnealingLR(optimizer, T_max=epochs)
+    
+    total_steps = epochs * len(train_loader)
+    scheduler = get_scheduler(optimizer, warmup_steps, total_steps)
 
     # Training loop
     best_val_loss = float("inf")
     for epoch in range(1, epochs + 1):
         t0 = time.time()
 
-        train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device, epoch)
+        train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device, epoch, scheduler)
         val_loss = validate(model, val_loader, criterion, device)
-        scheduler.step()
 
         elapsed = time.time() - t0
         print(

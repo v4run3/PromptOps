@@ -35,20 +35,25 @@ def load_model(
     return model, device
 
 
+    return generated
+
+
 @torch.no_grad()
-def greedy_decode(
+def beam_decode(
     model: Seq2SeqTransformer,
     src: torch.Tensor,
+    beam_size: int = 5,
     max_len: int = 128,
     device: torch.device | None = None,
 ) -> torch.Tensor:
-    """Auto-regressively generate an output sequence via greedy decoding.
+    """Generate an output sequence using Beam Search.
 
     Args:
-        model:   Trained Seq2SeqTransformer.
-        src:     Source token IDs — (1, src_len).
-        max_len: Maximum tokens to generate.
-        device:  Device for tensors.
+        model:     Trained Seq2SeqTransformer.
+        src:       Source token IDs — (1, src_len).
+        beam_size: Number of beams to maintain.
+        max_len:   Maximum tokens to generate.
+        device:    Device for tensors.
 
     Returns:
         Generated token IDs — (1, generated_len).
@@ -62,28 +67,51 @@ def greedy_decode(
     src_emb = model.pos_encoding(model.src_embedding(src) * math.sqrt(config.d_model))
     memory = model.encoder(src_emb, src_pad_mask)
 
-    # Start decoder with BOS token
-    generated = torch.tensor([[config.bos_token_id]], device=device)
+    # Beams: list of (sequence, score)
+    # Start with BOS
+    beams = [(torch.tensor([[config.bos_token_id]], device=device), 0.0)]
 
     for _ in range(max_len):
-        tgt_mask = model.generate_causal_mask(generated.size(1), device)
-        tgt_emb = model.pos_encoding(model.tgt_embedding(generated) * math.sqrt(config.d_model))
-        decoder_out = model.decoder(tgt_emb, memory, tgt_mask, src_pad_mask)
-        logits = model.output_projection(decoder_out[:, -1, :])  # last position
-        next_token = logits.argmax(dim=-1, keepdim=True)  # greedy
+        new_beams = []
+        for seq, score in beams:
+            # If sequence already reached EOS, keep it
+            if seq[0, -1].item() == config.eos_token_id:
+                new_beams.append((seq, score))
+                continue
 
-        generated = torch.cat([generated, next_token], dim=1)
+            # Decode next step
+            tgt_mask = model.generate_causal_mask(seq.size(1), device)
+            tgt_emb = model.pos_encoding(model.tgt_embedding(seq) * math.sqrt(config.d_model))
+            decoder_out = model.decoder(tgt_emb, memory, tgt_mask, src_pad_mask)
+            logits = model.output_projection(decoder_out[:, -1, :])
+            log_probs = torch.log_softmax(logits, dim=-1)
 
-        if next_token.item() == config.eos_token_id:
+            # Get top k candidates
+            top_probs, top_indices = log_probs.topk(beam_size)
+
+            for i in range(beam_size):
+                next_token = top_indices[0, i].unsqueeze(0).unsqueeze(0)
+                new_score = score + top_probs[0, i].item()
+                new_seq = torch.cat([seq, next_token], dim=1)
+                new_beams.append((new_seq, new_score))
+
+        # Sort all candidates by score and take top k
+        new_beams.sort(key=lambda x: x[1], reverse=True)
+        beams = new_beams[:beam_size]
+
+        # Stop early if all beams reach EOS
+        if all(b[0][0, -1].item() == config.eos_token_id for b in beams):
             break
 
-    return generated
+    # Return the best sequence
+    return beams[0][0]
 
 
 def summarize(
     dialogue: str,
     checkpoint_path: str = "checkpoints/best_model.pt",
     config: ModelConfig | None = None,
+    num_beams: int = 5,
 ) -> str:
     """Generate a summary for a raw dialogue string.
 
@@ -91,6 +119,7 @@ def summarize(
         dialogue:        The input dialogue text.
         checkpoint_path: Path to the model checkpoint.
         config:          Optional model config override.
+        num_beams:       If > 1, use Beam Search. Otherwise use Greedy.
 
     Returns:
         The generated summary as a plain string.
@@ -111,6 +140,10 @@ def summarize(
     src = src_enc["input_ids"].to(device)
 
     # Decode
-    output_ids = greedy_decode(model, src, device=device)
+    if num_beams > 1:
+        output_ids = beam_decode(model, src, beam_size=num_beams, device=device)
+    else:
+        output_ids = greedy_decode(model, src, device=device)
+
     summary = tokenizer.decode(output_ids.squeeze(0), skip_special_tokens=True)
     return summary
