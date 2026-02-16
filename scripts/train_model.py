@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=float, default=3e-4, help="Peak learning rate")
+    parser.add_argument("--warmup_steps", type=int, default=500, help="Linear warmup steps")
     parser.add_argument("--max_samples", type=int, default=None, help="Limit dataset size (debug)")
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints", help="Checkpoint dir")
     parser.add_argument("--device", type=str, default=None, help="Force device (cpu/cuda)")
@@ -24,6 +25,7 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch_size,
         learning_rate=args.lr,
+        warmup_steps=args.warmup_steps,
         max_samples=args.max_samples,
         checkpoint_dir=args.checkpoint_dir,
         device_name=args.device,
