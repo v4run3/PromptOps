@@ -25,11 +25,11 @@ class ModelConfig:
         label_smoothing:  Label smoothing factor for cross-entropy loss.
     """
 
-    d_model: int = 256
-    n_heads: int = 4
-    n_encoder_layers: int = 4
-    n_decoder_layers: int = 4
-    d_ff: int = 1024
+    d_model: int = 512
+    n_heads: int = 8
+    n_encoder_layers: int = 6
+    n_decoder_layers: int = 6
+    d_ff: int = 2048
     max_seq_len: int = 256
     dropout: float = 0.1
     vocab_size: int = 30_522

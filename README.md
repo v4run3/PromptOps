@@ -89,16 +89,16 @@ python scripts/train_model.py --epochs 2 --batch_size 4 --max_samples 100
 
 ### Model Architecture
 
-| Hyperparameter     | Value  |
-|--------------------|--------|
-| `d_model`          | 256    |
-| `n_heads`          | 4      |
-| `n_encoder_layers` | 4      |
-| `n_decoder_layers` | 4      |
-| `d_ff`             | 1024   |
-| `max_seq_len`      | 256    |
-| `dropout`          | 0.1    |
-| `vocab_size`       | 30,522 |
+| Hyperparameter | Value | Description |
+| :--- | :--- | :--- |
+| `d_model` | 512 | Hidden dimension / Embedding size |
+| `n_heads` | 8 | Number of attention heads |
+| `n_encoder_layers` | 6 | Number of encoder blocks |
+| `n_decoder_layers` | 6 | Number of decoder blocks |
+| `d_ff` | 2048 | Feed-forward network inner dimension |
+| `max_seq_len` | 256 | Max tokens for dialogue & summary |
+| `vocab_size` | 30522 | Tokenizer vocabulary (BERT uncased) |
+| `dropout` | 0.1 | Regularization |
 
 ## Docker
 
