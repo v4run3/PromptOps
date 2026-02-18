@@ -34,9 +34,44 @@ def load_model(
     model.eval()
     return model, device
 
+@torch.no_grad()
+def greedy_decode(
+    model: Seq2SeqTransformer,
+    src: torch.Tensor,
+    max_len: int = 128,
+    device: torch.device | None = None,
+) -> torch.Tensor:
+    """Generate an output sequence using simple greedy decoding.
+
+    Args:
+        model:   Trained Seq2SeqTransformer.
+        src:     Source token IDs — (1, src_len).
+        max_len: Maximum tokens to generate.
+        device:  Device for tensors.
+
+    Returns:
+        Generated token IDs — (1, generated_len).
+    """
+    config = model.config
+    device = device or next(model.parameters()).device
+
+    # Start with [BOS]
+    generated = torch.tensor([[config.bos_token_id]], device=device)
+
+    for _ in range(max_len):
+        # Forward pass
+        logits = model(src, generated)
+        next_token_logits = logits[:, -1, :]
+        next_token = torch.argmax(next_token_logits, dim=-1).unsqueeze(0)
+
+        # Append to sequence
+        generated = torch.cat([generated, next_token], dim=1)
+
+        # Stop if [EOS] reached
+        if next_token.item() == config.eos_token_id:
+            break
 
     return generated
-
 
 @torch.no_grad()
 def beam_decode(
