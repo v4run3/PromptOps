@@ -13,3 +13,19 @@ class PromptTemplate(BaseModel):
     template: str
     input_variables: list[str]
     metadata: Optional[dict] = None
+
+
+class SummarizationRequest(BaseModel):
+    """Request schema for summarization."""
+
+    dialogue: str
+    num_beams: Optional[int] = 5
+
+
+class SummarizationResponse(BaseModel):
+    """Response schema for summarization."""
+
+    summary: str
+    model_version: str
+
+    model_config = {"protected_namespaces": ()}
