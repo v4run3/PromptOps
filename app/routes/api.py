@@ -2,7 +2,7 @@ import os
 from fastapi import APIRouter, HTTPException
 from app.schemas import SummarizationRequest, SummarizationResponse
 from model.inference import summarize
-from model.config import ModelConfig
+
 
 router = APIRouter(prefix="/api")
 
