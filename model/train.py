@@ -178,12 +178,31 @@ def train(
     # Optimiser + scheduler
     optimizer = Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.98), eps=1e-9)
     
+    start_epoch = 1
+    best_val_loss = float("inf")
+
+    # Resume if requested
+    resume_path = os.path.join(checkpoint_dir, "best_model.pt")
+    if os.path.exists(resume_path):
+        print(f"Loading checkpoint for resume: {resume_path}")
+        checkpoint = torch.load(resume_path, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        # Optional: verify if optimizer state should be loaded
+        # optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        best_val_loss = checkpoint.get("loss", float("inf"))
+        print(f"Resuming from Epoch {start_epoch}")
+
     total_steps = epochs * len(train_loader)
     scheduler = get_scheduler(optimizer, warmup_steps, total_steps)
 
+    # Fast-forward scheduler if resuming
+    if start_epoch > 1:
+        for _ in range((start_epoch - 1) * len(train_loader)):
+            scheduler.step()
+
     # Training loop
-    best_val_loss = float("inf")
-    for epoch in range(1, epochs + 1):
+    for epoch in range(start_epoch, epochs + 1):
         t0 = time.time()
 
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device, epoch, scheduler)
