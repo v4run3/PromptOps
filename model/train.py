@@ -53,7 +53,7 @@ def _save_checkpoint(
         },
         path,
     )
-    print(f"  ✓ Checkpoint saved → {path}")
+    print(f"  [OK] Checkpoint saved -> {path}")
 
 
 def get_scheduler(optimizer: Adam, warmup_steps: int, total_steps: int):
@@ -146,6 +146,7 @@ def train(
     max_samples: int | None = None,
     checkpoint_dir: str = "checkpoints",
     device_name: str | None = None,
+    datasets: list[str] | None = None,
 ) -> None:
     """Full training entry-point.
 
@@ -157,14 +158,18 @@ def train(
         max_samples:    Limit dataset size (for smoke tests).
         checkpoint_dir: Directory to save checkpoints.
         device_name:    Force device (``'cpu'``, ``'cuda'``). Auto-detect if None.
+        datasets:       List of dataset names to combine. Defaults to ``['samsum']``.
     """
     config = ModelConfig()
     device = torch.device(device_name or ("cuda" if torch.cuda.is_available() else "cpu"))
     print(f"Device: {device}")
 
+    datasets = datasets or ["samsum"]
+    print(f"Datasets: {datasets}")
+
     # Data
-    train_loader = build_dataloader("train", config, batch_size, max_samples)
-    val_loader = build_dataloader("validation", config, batch_size, max_samples)
+    train_loader = build_dataloader("train", config, batch_size, max_samples, datasets=datasets)
+    val_loader = build_dataloader("validation", config, batch_size, max_samples, datasets=datasets)
 
     # Model
     model = _build_model(config, device)
@@ -202,6 +207,7 @@ def train(
             scheduler.step()
 
     # Training loop
+    val_loss = None
     for epoch in range(start_epoch, epochs + 1):
         t0 = time.time()
 
@@ -224,10 +230,11 @@ def train(
             )
 
     # Save final checkpoint
-    _save_checkpoint(
-        model, optimizer, epochs, val_loss,
-        os.path.join(checkpoint_dir, "final_model.pt"),
-    )
+    if val_loss is not None:
+        _save_checkpoint(
+            model, optimizer, epochs, val_loss,
+            os.path.join(checkpoint_dir, "final_model.pt"),
+        )
     print("Training complete.")
 
 
@@ -243,6 +250,12 @@ if __name__ == "__main__":
     parser.add_argument("--max_samples", type=int, default=None)
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument(
+        "--datasets",
+        type=str,
+        default="samsum",
+        help="Comma-separated list of datasets to train on. E.g. 'samsum,dialogsum'",
+    )
     args = parser.parse_args()
 
     train(
@@ -252,4 +265,5 @@ if __name__ == "__main__":
         max_samples=args.max_samples,
         checkpoint_dir=args.checkpoint_dir,
         device_name=args.device,
+        datasets=args.datasets.split(","),
     )
