@@ -33,6 +33,17 @@ if __name__ == "__main__":
         default="samsum",
         help="Comma-separated dataset list. E.g. 'samsum,dialogsum' for Phase 2.",
     )
+    parser.add_argument(
+        "--pretrained_encoder",
+        action="store_true",
+        help="Use BERT as encoder (Phase 3).",
+    )
+    parser.add_argument(
+        "--freeze_epochs",
+        type=int,
+        default=3,
+        help="Epochs to freeze BERT before fine-tuning.",
+    )
     args = parser.parse_args()
 
     train(
@@ -44,4 +55,6 @@ if __name__ == "__main__":
         checkpoint_dir=args.checkpoint_dir,
         device_name=args.device,
         datasets=args.datasets.split(","),
+        use_pretrained_encoder=args.pretrained_encoder,
+        freeze_epochs=args.freeze_epochs,
     )
