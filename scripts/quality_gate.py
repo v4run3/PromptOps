@@ -5,7 +5,6 @@ a minimum ROUGE score quality threshold.
 """
 
 import sys
-import torch
 import argparse
 from tqdm import tqdm
 
@@ -15,7 +14,7 @@ from model.dataset import SAMSumDataset
 from eval.evaluator import evaluate_batch
 
 def run_quality_gate(checkpoint_path: str, threshold: float = 0.20, max_samples: int = 100):
-    print(f"--- Quality Gate Start ---")
+    print("--- Quality Gate Start ---")
     print(f"Checkpoint: {checkpoint_path}")
     print(f"Threshold:  {threshold}")
     print(f"Samples:    {max_samples}")
@@ -58,7 +57,7 @@ def run_quality_gate(checkpoint_path: str, threshold: float = 0.20, max_samples:
     scores = evaluate_batch(generated_summaries, reference_summaries)
     
     rouge_l = scores["rougeL"]
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  ROUGE-1: {scores['rouge1']:.4f}")
     print(f"  ROUGE-2: {scores['rouge2']:.4f}")
     print(f"  ROUGE-L: {rouge_l:.4f}")
