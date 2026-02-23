@@ -19,17 +19,23 @@ def load_model(
 
     Args:
         checkpoint_path: Path to the ``.pt`` checkpoint file.
-        config:          Model config (must match the checkpoint architecture).
+        config:          Model config. If None, reads from checkpoint.
         device:          Target device. Auto-detects if None.
 
     Returns:
         Tuple of (model, device).
     """
-    config = config or ModelConfig()
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+
+    # Reconstruct config from checkpoint if available
+    if config is None:
+        if "config" in checkpoint:
+            config = ModelConfig(**checkpoint["config"])
+        else:
+            config = ModelConfig()
 
     model = Seq2SeqTransformer(config).to(device)
-    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     return model, device
@@ -97,10 +103,19 @@ def beam_decode(
     device = device or next(model.parameters()).device
 
     # Encode source once
-    src_pad_mask = model.generate_padding_mask(src, config.pad_token_id)
     import math
-    src_emb = model.pos_encoding(model.src_embedding(src) * math.sqrt(config.d_model))
-    memory = model.encoder(src_emb, src_pad_mask)
+    if model.use_pretrained_encoder:
+        attention_mask = (src != config.pad_token_id).long()
+        bert_output = model.bert_encoder(
+            input_ids=src, attention_mask=attention_mask
+        )
+        memory = model.encoder_projection(bert_output.last_hidden_state)
+    else:
+        src_pad_mask = model.generate_padding_mask(src, config.pad_token_id)
+        src_emb = model.pos_encoding(model.src_embedding(src) * math.sqrt(config.d_model))
+        memory = model.encoder(src_emb, src_pad_mask)
+
+    src_pad_mask = model.generate_padding_mask(src, config.pad_token_id)
 
     # Beams: list of (sequence, score)
     # Start with BOS
@@ -145,7 +160,6 @@ def beam_decode(
 def summarize(
     dialogue: str,
     checkpoint_path: str = "checkpoints/best_model.pt",
-    config: ModelConfig | None = None,
     num_beams: int = 5,
 ) -> str:
     """Generate a summary for a raw dialogue string.
@@ -153,18 +167,17 @@ def summarize(
     Args:
         dialogue:        The input dialogue text.
         checkpoint_path: Path to the model checkpoint.
-        config:          Optional model config override.
         num_beams:       If > 1, use Beam Search. Otherwise use Greedy.
 
     Returns:
         The generated summary as a plain string.
     """
-    config = config or ModelConfig()
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-
-    model, device = load_model(checkpoint_path, config)
+    model, device = load_model(checkpoint_path)
 
     # Tokenize
+    config = model.config
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
     src_enc = tokenizer(
         dialogue,
         max_length=config.max_seq_len,

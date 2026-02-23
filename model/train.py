@@ -41,18 +41,19 @@ def _save_checkpoint(
     epoch: int,
     loss: float,
     path: str,
+    config: ModelConfig | None = None,
 ) -> None:
     """Persist model + optimiser state."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    torch.save(
-        {
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "loss": loss,
-        },
-        path,
-    )
+    payload = {
+        "epoch": epoch,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "loss": loss,
+    }
+    if config is not None:
+        payload["config"] = vars(config)
+    torch.save(payload, path)
     print(f"  [OK] Checkpoint saved -> {path}")
 
 
@@ -97,7 +98,8 @@ def train_one_epoch(
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
-        scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
 
         total_loss += loss.item()
 
@@ -147,22 +149,28 @@ def train(
     checkpoint_dir: str = "checkpoints",
     device_name: str | None = None,
     datasets: list[str] | None = None,
+    use_pretrained_encoder: bool = False,
+    freeze_epochs: int = 3,
 ) -> None:
     """Full training entry-point.
 
     Args:
-        epochs:         Number of training epochs.
-        batch_size:     Batch size for train / val loaders.
-        learning_rate:  Peak learning rate after warmup.
-        warmup_steps:   Linear warmup steps (currently simplified).
-        max_samples:    Limit dataset size (for smoke tests).
-        checkpoint_dir: Directory to save checkpoints.
-        device_name:    Force device (``'cpu'``, ``'cuda'``). Auto-detect if None.
-        datasets:       List of dataset names to combine. Defaults to ``['samsum']``.
+        epochs:                Number of training epochs.
+        batch_size:            Batch size for train / val loaders.
+        learning_rate:         Peak learning rate after warmup.
+        warmup_steps:          Linear warmup steps.
+        max_samples:           Limit dataset size (for smoke tests).
+        checkpoint_dir:        Directory to save checkpoints.
+        device_name:           Force device. Auto-detect if None.
+        datasets:              List of dataset names. Defaults to ``['samsum']``.
+        use_pretrained_encoder: Use BERT as encoder (Phase 3).
+        freeze_epochs:         Epochs to freeze BERT before fine-tuning.
     """
-    config = ModelConfig()
+    config = ModelConfig(use_pretrained_encoder=use_pretrained_encoder,
+                         freeze_encoder_epochs=freeze_epochs)
     device = torch.device(device_name or ("cuda" if torch.cuda.is_available() else "cpu"))
     print(f"Device: {device}")
+    print(f"Pretrained encoder: {use_pretrained_encoder}")
 
     datasets = datasets or ["samsum"]
     print(f"Datasets: {datasets}")
@@ -180,9 +188,18 @@ def train(
         label_smoothing=config.label_smoothing,
     )
 
-    # Optimiser + scheduler
-    optimizer = Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.98), eps=1e-9)
-    
+    # Optimiser — differential LR for BERT vs decoder
+    if use_pretrained_encoder:
+        encoder_params = list(model.bert_encoder.parameters()) + list(model.encoder_projection.parameters())
+        decoder_params = [p for p in model.parameters()
+                          if id(p) not in {id(ep) for ep in encoder_params}]
+        optimizer = Adam([
+            {"params": encoder_params, "lr": 2e-5},   # Low LR for BERT
+            {"params": decoder_params, "lr": learning_rate},  # Full LR for decoder
+        ], betas=(0.9, 0.98), eps=1e-9)
+    else:
+        optimizer = Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.98), eps=1e-9)
+
     start_epoch = 1
     best_val_loss = float("inf")
 
@@ -190,10 +207,8 @@ def train(
     resume_path = os.path.join(checkpoint_dir, "best_model.pt")
     if os.path.exists(resume_path):
         print(f"Loading checkpoint for resume: {resume_path}")
-        checkpoint = torch.load(resume_path, map_location=device)
+        checkpoint = torch.load(resume_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint["model_state_dict"])
-        # Optional: verify if optimizer state should be loaded
-        # optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
         best_val_loss = checkpoint.get("loss", float("inf"))
         print(f"Resuming from Epoch {start_epoch}")
@@ -211,6 +226,16 @@ def train(
     for epoch in range(start_epoch, epochs + 1):
         t0 = time.time()
 
+        # Phase 3: freeze/unfreeze BERT encoder
+        if use_pretrained_encoder:
+            if epoch <= config.freeze_encoder_epochs:
+                model.freeze_encoder()
+                print(f"  [BERT encoder FROZEN] (epoch {epoch}/{config.freeze_encoder_epochs})")
+            else:
+                model.unfreeze_encoder()
+                if epoch == config.freeze_encoder_epochs + 1:
+                    print("  [BERT encoder UNFROZEN] Fine-tuning started.")
+
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device, epoch, scheduler)
         val_loss = validate(model, val_loader, criterion, device)
 
@@ -227,6 +252,7 @@ def train(
             _save_checkpoint(
                 model, optimizer, epoch, val_loss,
                 os.path.join(checkpoint_dir, "best_model.pt"),
+                config=config,
             )
 
     # Save final checkpoint
@@ -234,6 +260,7 @@ def train(
         _save_checkpoint(
             model, optimizer, epochs, val_loss,
             os.path.join(checkpoint_dir, "final_model.pt"),
+            config=config,
         )
     print("Training complete.")
 
@@ -254,7 +281,18 @@ if __name__ == "__main__":
         "--datasets",
         type=str,
         default="samsum",
-        help="Comma-separated list of datasets to train on. E.g. 'samsum,dialogsum'",
+        help="Comma-separated list of datasets. E.g. 'samsum,dialogsum'",
+    )
+    parser.add_argument(
+        "--pretrained_encoder",
+        action="store_true",
+        help="Use BERT as encoder (Phase 3).",
+    )
+    parser.add_argument(
+        "--freeze_epochs",
+        type=int,
+        default=3,
+        help="Epochs to freeze BERT before fine-tuning.",
     )
     args = parser.parse_args()
 
@@ -266,4 +304,6 @@ if __name__ == "__main__":
         checkpoint_dir=args.checkpoint_dir,
         device_name=args.device,
         datasets=args.datasets.split(","),
+        use_pretrained_encoder=args.pretrained_encoder,
+        freeze_epochs=args.freeze_epochs,
     )

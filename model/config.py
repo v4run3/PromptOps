@@ -37,3 +37,8 @@ class ModelConfig:
     bos_token_id: int = 101   # [CLS] in bert-base-uncased
     eos_token_id: int = 102   # [SEP] in bert-base-uncased
     label_smoothing: float = 0.1
+
+    # Phase 3: BERT-initialized encoder
+    use_pretrained_encoder: bool = False   # Set True to use BERT as encoder
+    freeze_encoder_epochs: int = 3         # Freeze BERT for first N epochs
+    bert_hidden_size: int = 768            # BERT-base output dimension

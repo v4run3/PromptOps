@@ -260,17 +260,43 @@ class Seq2SeqTransformer(nn.Module):
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
+        self.use_pretrained_encoder = config.use_pretrained_encoder
 
-        # Shared or separate embeddings (using separate here for clarity)
-        self.src_embedding = nn.Embedding(config.vocab_size, config.d_model, padding_idx=config.pad_token_id)
-        self.tgt_embedding = nn.Embedding(config.vocab_size, config.d_model, padding_idx=config.pad_token_id)
-        self.pos_encoding = PositionalEncoding(config.d_model, config.max_seq_len, config.dropout)
+        if self.use_pretrained_encoder:
+            # --- Phase 3: BERT-initialized encoder ---
+            from transformers import BertModel
 
-        self.encoder = TransformerEncoder(
-            config.n_encoder_layers, config.d_model, config.n_heads, config.d_ff, config.dropout
+            self.bert_encoder = BertModel.from_pretrained("bert-base-uncased")
+            # Project BERT's 768-d output to our decoder's d_model
+            self.encoder_projection = nn.Linear(
+                config.bert_hidden_size, config.d_model
+            )
+        else:
+            # --- Original from-scratch encoder ---
+            self.src_embedding = nn.Embedding(
+                config.vocab_size, config.d_model, padding_idx=config.pad_token_id
+            )
+            self.encoder = TransformerEncoder(
+                config.n_encoder_layers,
+                config.d_model,
+                config.n_heads,
+                config.d_ff,
+                config.dropout,
+            )
+
+        # Decoder (always from scratch)
+        self.tgt_embedding = nn.Embedding(
+            config.vocab_size, config.d_model, padding_idx=config.pad_token_id
+        )
+        self.pos_encoding = PositionalEncoding(
+            config.d_model, config.max_seq_len, config.dropout
         )
         self.decoder = TransformerDecoder(
-            config.n_decoder_layers, config.d_model, config.n_heads, config.d_ff, config.dropout
+            config.n_decoder_layers,
+            config.d_model,
+            config.n_heads,
+            config.d_ff,
+            config.dropout,
         )
 
         self.output_projection = nn.Linear(config.d_model, config.vocab_size)
@@ -278,10 +304,31 @@ class Seq2SeqTransformer(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        """Xavier uniform initialization for all linear layers and embeddings."""
+        """Xavier uniform initialization for non-pretrained layers."""
+        # Skip BERT parameters — they are already pre-trained
+        pretrained_params = set()
+        if self.use_pretrained_encoder:
+            pretrained_params = {
+                id(p) for p in self.bert_encoder.parameters()
+            }
+
         for p in self.parameters():
-            if p.dim() > 1:
+            if id(p) not in pretrained_params and p.dim() > 1:
                 nn.init.xavier_uniform_(p)
+
+    # ----- Encoder Freeze/Unfreeze (Phase 3) -----
+
+    def freeze_encoder(self):
+        """Freeze BERT encoder parameters (used during initial training epochs)."""
+        if self.use_pretrained_encoder:
+            for param in self.bert_encoder.parameters():
+                param.requires_grad = False
+
+    def unfreeze_encoder(self):
+        """Unfreeze BERT encoder parameters for fine-tuning."""
+        if self.use_pretrained_encoder:
+            for param in self.bert_encoder.parameters():
+                param.requires_grad = True
 
     # ----- Mask Utilities -----
 
@@ -322,19 +369,41 @@ class Seq2SeqTransformer(nn.Module):
         Returns:
             Logits of shape (batch, tgt_len, vocab_size).
         """
-        # Masks
-        src_pad_mask = self.generate_padding_mask(src, self.config.pad_token_id)
+        # --- Encode ---
+        if self.use_pretrained_encoder:
+            # BERT handles its own embeddings, positions, and attention masks
+            attention_mask = (src != self.config.pad_token_id).long()
+            bert_output = self.bert_encoder(
+                input_ids=src, attention_mask=attention_mask
+            )
+            encoder_output = self.encoder_projection(
+                bert_output.last_hidden_state
+            )
+            # Build src padding mask for cross-attention in decoder
+            src_pad_mask = self.generate_padding_mask(
+                src, self.config.pad_token_id
+            )
+        else:
+            # Original from-scratch encoding
+            src_pad_mask = self.generate_padding_mask(
+                src, self.config.pad_token_id
+            )
+            src_emb = self.pos_encoding(
+                self.src_embedding(src) * math.sqrt(self.config.d_model)
+            )
+            encoder_output = self.encoder(src_emb, src_pad_mask)
+
+        # --- Decode (always the same) ---
         tgt_pad_mask = self.generate_padding_mask(tgt, self.config.pad_token_id)
         tgt_causal_mask = self.generate_causal_mask(tgt.size(1), tgt.device)
-        tgt_mask = tgt_pad_mask | tgt_causal_mask  # combine padding + causal
+        tgt_mask = tgt_pad_mask | tgt_causal_mask
 
-        # Encode
-        src_emb = self.pos_encoding(self.src_embedding(src) * math.sqrt(self.config.d_model))
-        encoder_output = self.encoder(src_emb, src_pad_mask)
-
-        # Decode
-        tgt_emb = self.pos_encoding(self.tgt_embedding(tgt) * math.sqrt(self.config.d_model))
-        decoder_output = self.decoder(tgt_emb, encoder_output, tgt_mask, src_pad_mask)
+        tgt_emb = self.pos_encoding(
+            self.tgt_embedding(tgt) * math.sqrt(self.config.d_model)
+        )
+        decoder_output = self.decoder(
+            tgt_emb, encoder_output, tgt_mask, src_pad_mask
+        )
 
         # Project to vocabulary
         logits = self.output_projection(decoder_output)
