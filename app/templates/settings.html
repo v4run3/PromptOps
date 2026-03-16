@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} — Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-bolt"></i> <span>{{ project_name }}</span>
+        </div>
+
+        <nav>
+            <a href="/"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+            <a href="/prompts"><i class="fa-solid fa-list-check"></i> Prompts</a>
+            <a href="/evaluation"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
+            <a href="/models"><i class="fa-solid fa-microchip"></i> Models</a>
+            <a href="#"><i class="fa-solid fa-server"></i> CI/CD Logs</a>
+            <a href="/settings" class="active"><i class="fa-solid fa-gear"></i> Settings</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <p>Version {{ version }}</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1 class="page-title"><i class="fa-solid fa-gear"></i> Settings</h1>
+                <p class="page-subtitle">Model configuration, training parameters, and system info</p>
+            </div>
+        </header>
+
+        <!-- Settings Grid -->
+        <div class="settings-grid">
+
+            <!-- Model Architecture -->
+            <section class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h2>Model Architecture</h2>
+                </div>
+                <div class="settings-table">
+                    <div class="settings-row">
+                        <span class="settings-label">Architecture</span>
+                        <span class="settings-value" id="archType">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Encoder</span>
+                        <span class="settings-value" id="encoderType">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Hidden Size (d_model)</span>
+                        <span class="settings-value" id="dModel">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Attention Heads</span>
+                        <span class="settings-value" id="nHeads">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Encoder Layers</span>
+                        <span class="settings-value" id="encLayers">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Decoder Layers</span>
+                        <span class="settings-value" id="decLayers">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Feed-Forward Size</span>
+                        <span class="settings-value" id="dFF">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Vocabulary Size</span>
+                        <span class="settings-value" id="vocabSize">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Max Sequence Length</span>
+                        <span class="settings-value" id="maxSeqLen">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Dropout</span>
+                        <span class="settings-value" id="dropout">—</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Training Configuration -->
+            <section class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                        <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <h2>Training Configuration</h2>
+                </div>
+                <div class="settings-table">
+                    <div class="settings-row">
+                        <span class="settings-label">Pretrained Encoder</span>
+                        <span class="settings-value" id="pretrainedEncoder">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">BERT Hidden Size</span>
+                        <span class="settings-value" id="bertHidden">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Freeze Encoder Epochs</span>
+                        <span class="settings-value" id="freezeEpochs">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Label Smoothing</span>
+                        <span class="settings-value" id="labelSmoothing">—</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quality Gate -->
+            <section class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h2>Quality Gate</h2>
+                </div>
+                <div class="settings-table">
+                    <div class="settings-row">
+                        <span class="settings-label">ROUGE-L Threshold</span>
+                        <span class="settings-value" id="threshold">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Gate Status</span>
+                        <span class="settings-value" id="gateStatus">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Last Evaluation</span>
+                        <span class="settings-value" id="lastEval">—</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Info -->
+            <section class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <h2>System Info</h2>
+                </div>
+                <div class="settings-table">
+                    <div class="settings-row">
+                        <span class="settings-label">Checkpoint Path</span>
+                        <span class="settings-value" id="ckptPath">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Checkpoint Exists</span>
+                        <span class="settings-value" id="ckptExists">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Prompts Directory</span>
+                        <span class="settings-value" id="promptsDir">—</span>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">Prompt Count</span>
+                        <span class="settings-value" id="promptCount">—</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+</div>
+
+<script>
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+
+        // Model Architecture
+        document.getElementById('archType').textContent = data.architecture.type;
+        document.getElementById('encoderType').textContent = data.architecture.encoder;
+        document.getElementById('dModel').textContent = data.architecture.d_model;
+        document.getElementById('nHeads').textContent = data.architecture.n_heads;
+        document.getElementById('encLayers').textContent = data.architecture.n_encoder_layers;
+        document.getElementById('decLayers').textContent = data.architecture.n_decoder_layers;
+        document.getElementById('dFF').textContent = data.architecture.d_ff;
+        document.getElementById('vocabSize').textContent = data.architecture.vocab_size.toLocaleString();
+        document.getElementById('maxSeqLen').textContent = data.architecture.max_seq_len;
+        document.getElementById('dropout').textContent = data.architecture.dropout;
+
+        // Training Config
+        const pe = data.training.use_pretrained_encoder;
+        document.getElementById('pretrainedEncoder').innerHTML = pe
+            ? '<span class="badge badge-success">Enabled (BERT)</span>'
+            : '<span class="badge badge-muted">Disabled</span>';
+        document.getElementById('bertHidden').textContent = data.training.bert_hidden_size;
+        document.getElementById('freezeEpochs').textContent = data.training.freeze_encoder_epochs;
+        document.getElementById('labelSmoothing').textContent = data.training.label_smoothing;
+
+        // Quality Gate
+        document.getElementById('threshold').textContent = data.quality_gate.threshold;
+        const status = data.quality_gate.status;
+        document.getElementById('gateStatus').innerHTML = status === 'PASS'
+            ? '<span class="badge badge-success"><i class="fa-solid fa-check"></i> PASS</span>'
+            : status === 'FAIL'
+            ? '<span class="badge badge-error"><i class="fa-solid fa-xmark"></i> FAIL</span>'
+            : '<span class="badge badge-muted">No data</span>';
+        document.getElementById('lastEval').textContent = data.quality_gate.timestamp || 'Never';
+
+        // System Info
+        document.getElementById('ckptPath').textContent = data.system.checkpoint_path;
+        document.getElementById('ckptExists').innerHTML = data.system.checkpoint_exists
+            ? '<span class="badge badge-success">Found</span>'
+            : '<span class="badge badge-error">Missing</span>';
+        document.getElementById('promptsDir').textContent = data.system.prompts_dir;
+        document.getElementById('promptCount').textContent = data.system.prompt_count;
+
+    } catch (error) {
+        console.error('Failed to load settings:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadSettings);
+</script>
+
+</body>
+</html>

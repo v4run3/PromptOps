@@ -12,3 +12,12 @@ async def dashboard(request: Request):
         "project_name": "PromptOps",
         "version": "v1.0"
     })
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings(request: Request):
+    return templates.TemplateResponse("settings.html", {
+        "request": request,
+        "project_name": "PromptOps",
+        "version": "v1.0"
+    })
+

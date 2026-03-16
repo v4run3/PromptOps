@@ -74,3 +74,55 @@ async def metrics():
         "phase": phase,
     }
 
+
+@router.get("/settings")
+async def settings():
+    """Return model configuration, training params, and system info."""
+    from model.config import ModelConfig
+    config = ModelConfig()
+
+    # Read eval results for quality gate info
+    eval_data = {}
+    if EVAL_RESULTS_PATH.exists():
+        try:
+            with open(EVAL_RESULTS_PATH, "r") as f:
+                eval_data = json.load(f)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Count prompts
+    prompt_count = 0
+    if PROMPTS_DIR.exists():
+        prompt_count = len(list(PROMPTS_DIR.glob("*.yaml")))
+
+    return {
+        "architecture": {
+            "type": "Seq2Seq Transformer",
+            "encoder": "BERT-base-uncased" if config.use_pretrained_encoder else "Custom Transformer",
+            "d_model": config.d_model,
+            "n_heads": config.n_heads,
+            "n_encoder_layers": config.n_encoder_layers,
+            "n_decoder_layers": config.n_decoder_layers,
+            "d_ff": config.d_ff,
+            "vocab_size": config.vocab_size,
+            "max_seq_len": config.max_seq_len,
+            "dropout": config.dropout,
+        },
+        "training": {
+            "use_pretrained_encoder": config.use_pretrained_encoder,
+            "bert_hidden_size": config.bert_hidden_size,
+            "freeze_encoder_epochs": config.freeze_encoder_epochs,
+            "label_smoothing": config.label_smoothing,
+        },
+        "quality_gate": {
+            "threshold": eval_data.get("threshold", 0.10),
+            "status": eval_data.get("quality_gate", "No data"),
+            "timestamp": eval_data.get("timestamp", None),
+        },
+        "system": {
+            "checkpoint_path": CHECKPOINT_PATH,
+            "checkpoint_exists": os.path.exists(CHECKPOINT_PATH),
+            "prompts_dir": str(PROMPTS_DIR),
+            "prompt_count": prompt_count,
+        },
+    }
