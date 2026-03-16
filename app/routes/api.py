@@ -1,4 +1,7 @@
+import json
 import os
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 from app.schemas import SummarizationRequest, SummarizationResponse
 from model.inference import summarize
@@ -8,6 +11,8 @@ router = APIRouter(prefix="/api")
 
 # Lazy model state (optional enhancement: use a proper singleton)
 CHECKPOINT_PATH = "checkpoints/best_model.pt"
+PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
+EVAL_RESULTS_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "results.json"
 
 @router.get("/health")
 async def health_check():
@@ -38,8 +43,34 @@ async def run_summarization(request: SummarizationRequest):
 
 @router.get("/metrics")
 async def metrics():
+    """Return real metrics from the filesystem and eval results."""
+    # Count actual prompt YAML files
+    prompt_count = 0
+    if PROMPTS_DIR.exists():
+        prompt_count = len(list(PROMPTS_DIR.glob("*.yaml")))
+
+    # Read evaluation results
+    rouge_l = 0.0
+    model_name = "No model trained"
+    phase = 0
+
+    if EVAL_RESULTS_PATH.exists():
+        try:
+            with open(EVAL_RESULTS_PATH, "r") as f:
+                results = json.load(f)
+            rouge_l = results.get("rouge_l", 0.0)
+            model_name = results.get("model_name", "unknown")
+            phase = results.get("phase", 0)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Check if checkpoint exists
+    has_model = os.path.exists(CHECKPOINT_PATH)
+
     return {
-        "active_prompts": 12,
-        "latest_score": 0.87,
-        "model_version": "transformer-base-v1"
+        "active_prompts": prompt_count,
+        "latest_score": round(rouge_l, 4),
+        "model_version": model_name if has_model else "No checkpoint found",
+        "phase": phase,
     }
+

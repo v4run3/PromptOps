@@ -1,0 +1,12 @@
+{
+    "phase": 3,
+    "model_name": "BERT-Seq2Seq Phase 3",
+    "rouge_1": 0.3326,
+    "rouge_2": 0.1141,
+    "rouge_l": 0.2797,
+    "val_loss": 3.8094,
+    "epochs_trained": 8,
+    "quality_gate": "PASS",
+    "threshold": 0.10,
+    "timestamp": "2026-02-24T19:05:00"
+}
