@@ -1,7 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }} Dashboard</title>
+    <!-- Add FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <script defer src="/static/script.js"></script>
 </head>
@@ -12,20 +16,20 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
-            ⚡ <span>{{ project_name }}</span>
+            <i class="fa-solid fa-bolt"></i> <span>{{ project_name }}</span>
         </div>
 
         <nav>
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Prompts</a>
-            <a href="#">Evaluation</a>
-            <a href="#">Models</a>
-            <a href="#">CI/CD Logs</a>
-            <a href="#">Settings</a>
+            <a href="#" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+            <a href="#"><i class="fa-solid fa-list-check"></i> Prompts</a>
+            <a href="#"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
+            <a href="#"><i class="fa-solid fa-microchip"></i> Models</a>
+            <a href="#"><i class="fa-solid fa-server"></i> CI/CD Logs</a>
+            <a href="#"><i class="fa-solid fa-gear"></i> Settings</a>
         </nav>
 
         <div class="sidebar-footer">
-            <small>{{ version }}</small>
+            <p>Version {{ version }}</p>
         </div>
     </aside>
 
@@ -33,32 +37,89 @@
     <main class="main-content">
 
         <header class="topbar">
-            <input type="text" placeholder="Search prompts..." />
-            <button class="btn-primary">New Prompt</button>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search prompts, evaluations..." />
+            </div>
+            <button class="btn-primary">
+                <i class="fa-solid fa-plus"></i>
+                New Prompt
+            </button>
         </header>
 
         <section class="hero">
-            <h1>Prompt Template Management</h1>
-            <p>Design • Evaluate • Deploy • Monitor</p>
+            <h1>Platform Overview</h1>
+            <p>Design • Evaluate • Deploy • Monitor AI applications efficiently.</p>
         </section>
 
-        <section class="cards">
-
+        <!-- Metrics Grid -->
+        <section class="cards-grid">
             <div class="card">
-                <h3>Active Prompts</h3>
-                <p id="activePrompts">--</p>
+                <header class="card-header">
+                    <h3>Active Prompts</h3>
+                    <div class="card-icon"><i class="fa-regular fa-file-code"></i></div>
+                </header>
+                <p class="metric-value" id="activePrompts">--</p>
             </div>
 
             <div class="card">
-                <h3>Latest Eval Score</h3>
-                <p id="latestScore">--</p>
+                <header class="card-header">
+                    <h3>Latest Eval Score</h3>
+                    <div class="card-icon"><i class="fa-solid fa-star-half-stroke"></i></div>
+                </header>
+                <p class="metric-value" id="latestScore">--</p>
             </div>
 
             <div class="card">
-                <h3>Current Model</h3>
-                <p id="modelVersion">--</p>
+                <header class="card-header">
+                    <h3>Current Model</h3>
+                    <div class="card-icon"><i class="fa-solid fa-network-wired"></i></div>
+                </header>
+                <p class="metric-value" id="modelVersion" style="font-size: 20px;">--</p>
             </div>
+        </section>
 
+        <!-- Testing Console -->
+        <section class="console-section">
+            <div class="console-card">
+                <div class="console-header">
+                    <div class="console-title">
+                        <i class="fa-solid fa-terminal"></i> Model Inference Console
+                    </div>
+                </div>
+                
+                <div class="console-body">
+                    <!-- Input Area -->
+                    <div class="input-group">
+                        <label for="dialogueInput">Dialogue Input</label>
+                        <textarea id="dialogueInput" placeholder="Paste dialogue here... (e.g., A: Hi there! B: Hello!)"></textarea>
+                    </div>
+
+                    <!-- Output Area -->
+                    <div class="output-group">
+                        <label>Generated Summary</label>
+                        <div class="output-panel">
+                            <div class="output-label">
+                                <i class="fa-solid fa-robot"></i> Output
+                            </div>
+                            <div id="summaryOutput">
+                                <span class="placeholder-text">Run the model to see results...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="action-row">
+                    <button class="btn-primary" id="summarizeBtn" onclick="testSummarize()">
+                        <span>Generate Summary</span>
+                        <i class="fa-solid fa-wand-magic-sparkles" id="btnIcon"></i>
+                        <svg class="spinner" id="btnSpinner" viewBox="0 0 50 50">
+                            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </section>
 
     </main>
