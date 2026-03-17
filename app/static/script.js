@@ -62,7 +62,7 @@ async function testSummarize() {
             },
             body: JSON.stringify({
                 dialogue: dialogue,
-                num_beams: 4
+                num_beams: 8
             })
         });
 

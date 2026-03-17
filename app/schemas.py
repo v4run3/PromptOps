@@ -19,7 +19,7 @@ class SummarizationRequest(BaseModel):
     """Request schema for summarization."""
 
     dialogue: str
-    num_beams: Optional[int] = 5
+    num_beams: Optional[int] = 8
 
 
 class SummarizationResponse(BaseModel):
