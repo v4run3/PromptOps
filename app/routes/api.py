@@ -110,7 +110,12 @@ async def metrics():
 async def settings():
     """Return model configuration, training params, and system info."""
     from model.config import ModelConfig
+
+    # From-scratch config (default)
     config = ModelConfig()
+
+    # Pretrained (Phase 3) config
+    pretrained_config = ModelConfig(use_pretrained_encoder=True)
 
     # Read eval results for quality gate info
     eval_data = {}
@@ -129,7 +134,7 @@ async def settings():
     return {
         "architecture": {
             "type": "Seq2Seq Transformer",
-            "encoder": "BERT-base-uncased" if config.use_pretrained_encoder else "Custom Transformer",
+            "encoder": "Custom Transformer (from scratch)",
             "d_model": config.d_model,
             "n_heads": config.n_heads,
             "n_encoder_layers": config.n_encoder_layers,
@@ -138,6 +143,30 @@ async def settings():
             "vocab_size": config.vocab_size,
             "max_seq_len": config.max_seq_len,
             "dropout": config.dropout,
+        },
+        "pretrained_model": {
+            "type": "BERT-Seq2Seq Transformer (Phase 3)",
+            "encoder": "BERT-base-uncased (110M params)",
+            "decoder": "Custom Transformer Decoder",
+            "bert_hidden_size": pretrained_config.bert_hidden_size,
+            "projection": f"{pretrained_config.bert_hidden_size} → {pretrained_config.d_model}",
+            "d_model": pretrained_config.d_model,
+            "n_decoder_layers": pretrained_config.n_decoder_layers,
+            "vocab_size": pretrained_config.vocab_size,
+            "freeze_epochs": pretrained_config.freeze_encoder_epochs,
+            "datasets": "SAMSum + DialogSum",
+            "best_val_loss": eval_data.get("val_loss", "N/A"),
+            "rouge_l": eval_data.get("rouge_l", "N/A"),
+            "epochs_trained": eval_data.get("epochs_trained", "N/A"),
+        },
+        "hf_model": {
+            "name": "philschmid/bart-large-cnn-samsum",
+            "type": "BART-Large (406M params)",
+            "encoder": "BART Encoder (12 layers)",
+            "decoder": "BART Decoder (12 layers)",
+            "d_model": 1024,
+            "vocab_size": 50265,
+            "purpose": "Comparison / baseline inference",
         },
         "training": {
             "use_pretrained_encoder": config.use_pretrained_encoder,
@@ -158,6 +187,7 @@ async def settings():
         },
     }
 
+<<<<<<< HEAD
 @router.get("/evaluation/data")
 async def evaluation_data():
     """Return specific evaluation data and leaderboard metrics."""
@@ -209,3 +239,5 @@ async def evaluation_data():
         "custom": custom_metrics,
         "baseline": baseline_metrics
     }
+=======
+>>>>>>> c8343b3f8634feda80f22db7e5e5990bd32a9255

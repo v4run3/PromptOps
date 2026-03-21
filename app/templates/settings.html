@@ -291,13 +291,13 @@
     <!-- Settings Grid -->
     <div class="settings-grid">
 
-        <!-- Model Architecture -->
+        <!-- Model Architecture (From Scratch) -->
         <section class="settings-card">
             <div class="settings-card-header">
                 <div class="settings-card-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
                     <i class="fa-solid fa-brain"></i>
                 </div>
-                <h2>Model Architecture</h2>
+                <h2>Custom Model (Phase 1-2)</h2>
             </div>
             <div class="settings-table">
                 <div class="settings-row">
@@ -339,6 +339,102 @@
                 <div class="settings-row">
                     <span class="settings-label">Dropout</span>
                     <span class="settings-value" id="dropout">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- BERT Pretrained Model (Phase 3) -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h2>BERT Pretrained Model (Phase 3)</h2>
+            </div>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">Architecture</span>
+                    <span class="settings-value" id="ptType">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Encoder</span>
+                    <span class="settings-value" id="ptEncoder">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Decoder</span>
+                    <span class="settings-value" id="ptDecoder">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">BERT Hidden Size</span>
+                    <span class="settings-value" id="ptBertHidden">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Projection Layer</span>
+                    <span class="settings-value" id="ptProjection">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Decoder Layers</span>
+                    <span class="settings-value" id="ptDecLayers">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Freeze Epochs</span>
+                    <span class="settings-value" id="ptFreezeEpochs">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Training Datasets</span>
+                    <span class="settings-value" id="ptDatasets">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Epochs Trained</span>
+                    <span class="settings-value" id="ptEpochs">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Best Val Loss</span>
+                    <span class="settings-value" id="ptValLoss">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">ROUGE-L Score</span>
+                    <span class="settings-value" id="ptRougeL">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- HuggingFace Comparison Model -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                    <i class="fa-brands fa-hubspot"></i>
+                </div>
+                <h2>HuggingFace Comparison Model</h2>
+            </div>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">Model Name</span>
+                    <span class="settings-value" id="hfName">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Architecture</span>
+                    <span class="settings-value" id="hfType">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Encoder</span>
+                    <span class="settings-value" id="hfEncoder">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Decoder</span>
+                    <span class="settings-value" id="hfDecoder">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Hidden Size</span>
+                    <span class="settings-value" id="hfDModel">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Vocabulary Size</span>
+                    <span class="settings-value" id="hfVocab">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Purpose</span>
+                    <span class="settings-value" id="hfPurpose">—</span>
                 </div>
             </div>
         </section>
@@ -453,6 +549,36 @@ async function loadSettings() {
         document.getElementById('bertHidden').textContent = data.training.bert_hidden_size;
         document.getElementById('freezeEpochs').textContent = data.training.freeze_encoder_epochs;
         document.getElementById('labelSmoothing').textContent = data.training.label_smoothing;
+
+        // BERT Pretrained Model (Phase 3)
+        if (data.pretrained_model) {
+            const pt = data.pretrained_model;
+            document.getElementById('ptType').textContent = pt.type;
+            document.getElementById('ptEncoder').textContent = pt.encoder;
+            document.getElementById('ptDecoder').textContent = pt.decoder;
+            document.getElementById('ptBertHidden').textContent = pt.bert_hidden_size;
+            document.getElementById('ptProjection').textContent = pt.projection;
+            document.getElementById('ptDecLayers').textContent = pt.n_decoder_layers;
+            document.getElementById('ptFreezeEpochs').textContent = pt.freeze_epochs;
+            document.getElementById('ptDatasets').textContent = pt.datasets;
+            document.getElementById('ptEpochs').textContent = pt.epochs_trained;
+            document.getElementById('ptValLoss').textContent = pt.best_val_loss;
+            document.getElementById('ptRougeL').innerHTML = pt.rouge_l !== 'N/A'
+                ? '<span class="badge badge-success">' + pt.rouge_l + '</span>'
+                : 'N/A';
+        }
+
+        // HuggingFace Comparison Model
+        if (data.hf_model) {
+            const hf = data.hf_model;
+            document.getElementById('hfName').textContent = hf.name;
+            document.getElementById('hfType').textContent = hf.type;
+            document.getElementById('hfEncoder').textContent = hf.encoder;
+            document.getElementById('hfDecoder').textContent = hf.decoder;
+            document.getElementById('hfDModel').textContent = hf.d_model;
+            document.getElementById('hfVocab').textContent = hf.vocab_size.toLocaleString();
+            document.getElementById('hfPurpose').textContent = hf.purpose;
+        }
 
         // Quality Gate
         document.getElementById('threshold').textContent = data.quality_gate.threshold;
