@@ -3,137 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ project_name }} Dashboard</title>
-    <!-- Add FontAwesome for icons -->
+    <title>{{ project_name }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="/static/script.js"></script>
+    <style>
+        /* ─── Reset ─────────────────────────────── */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #ececec;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ───────────────────────────── */
+        .sidebar {
+            width: 200px;
+            min-width: 200px;
+            background: #0d0d0d;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 0;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        /* collapse button row */
+        .sb-collapse {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 14px 12px;
+        }
+        .sb-collapse button {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .sb-collapse button:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+
+        /* Nav items */
+        .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+
+        .sb-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        .sb-item i { width: 18px; text-align: center; font-size: 15px; }
+        .sb-item:hover { background: rgba(255,255,255,0.06); color: #eee; }
+        .sb-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+
+        .sb-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            padding: 14px 20px 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sb-section-title i { font-size: 11px; }
+
+        .sb-history-item {
+            padding: 7px 20px;
+            font-size: 13px;
+            color: #888;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.15s;
+        }
+        .sb-history-item:hover { color: #ccc; }
+
+        .sb-see-all {
+            padding: 4px 20px 12px;
+            font-size: 13px;
+            color: #4a7cf7;
+            cursor: pointer;
+        }
+        .sb-see-all:hover { text-decoration: underline; }
+
+        .sb-bottom {
+            margin-top: auto;
+            padding: 12px;
+        }
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* ─── Main ───────────────────────────────── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* top-right actions bar */
+        .topbar-right {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .topbar-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: #aaa;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .topbar-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .topbar-btn i { font-size: 12px; }
+
+        /* ─── Hero (centered content) ────────────── */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            width: 100%;
+            max-width: 680px;
+            padding: 0 24px;
+        }
+
+        /* Logo */
+        .hero-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: fadeSlideDown 0.5s ease-out;
+        }
+        .hero-logo-icon {
+            font-size: 38px;
+            background: linear-gradient(135deg, #fff 30%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-logo-text {
+            font-size: 44px;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #ffffff 50%, #777 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ─── Input Bar ──────────────────────────── */
+        .input-bar-wrap { width: 100%; animation: fadeSlideUp 0.5s ease-out 0.1s both; }
+
+        .input-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.11);
+            border-radius: 14px;
+            padding: 12px 14px;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .input-bar:focus-within {
+            border-color: rgba(255,255,255,0.22);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .bar-left-icon {
+            color: #555;
+            font-size: 15px;
+            padding-bottom: 3px;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .bar-left-icon:hover { color: #999; }
+
+        .bar-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #eee;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            resize: none;
+            line-height: 1.5;
+            min-height: 22px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .bar-input::placeholder { color: #444; }
+
+        .bar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Model dropdown pill (replaces "Auto") */
+        .model-pill-wrap { position: relative; display: flex; align-items: center; }
+        .model-pill {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: #ccc;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            padding: 6px 26px 6px 12px;
+            cursor: pointer;
+            outline: none;
+            min-width: 110px;
+            transition: border-color 0.2s;
+        }
+        .model-pill:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+        .model-pill option { background: #111; color: #eee; }
+        .pill-chevron {
+            position: absolute;
+            right: 8px;
+            font-size: 9px;
+            color: #555;
+            pointer-events: none;
+        }
+
+        /* send button */
+        .send-btn {
+            width: 34px;
+            height: 34px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+        .send-btn:hover { opacity: 0.85; transform: scale(1.05); }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+        /* Output panel */
+        .output-panel {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            padding: 16px 18px;
+        }
+        .output-tag {
+            font-size: 11px;
+            color: #4a7cf7;
+            background: rgba(74,124,247,0.12);
+            border: 1px solid rgba(74,124,247,0.2);
+            border-radius: 20px;
+            padding: 2px 10px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .output-tag:empty { display: none; }
+        #summaryOutput {
+            font-size: 14.5px;
+            line-height: 1.7;
+            color: #ddd;
+            min-height: 36px;
+        }
+        .placeholder-text { color: #3a3a3a; font-style: italic; font-size: 14px; }
+
+        /* ─── Action chips ───────────────────────── */
+        .action-chips {
+            display: flex;
+            gap: 10px;
+            animation: fadeSlideUp 0.5s ease-out 0.25s both;
+        }
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 20px;
+            background: transparent;
+            color: #777;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip:hover { background: #111; color: #ccc; border-color: rgba(255,255,255,0.15); }
+        .chip i { font-size: 11px; }
+
+        /* ─── Metric pills (top-right) ───────────── */
+        .metric-pills {
+            display: flex;
+            gap: 8px;
+        }
+        .mpill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+        .mpill strong { color: #eee; font-size: 13px; }
+        .mpill i { color: #4a7cf7; font-size: 11px; }
+
+        /* ─── Spinner ──────────────────────────── */
+        .spinner { animation: spin 1s linear infinite; width: 14px; height: 14px; display: none; }
+        .spinner .path { stroke: #000; stroke-linecap: round; animation: dash 1.5s ease-in-out infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0%   { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+            50%  { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+            100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+        }
+
+        /* ─── Animations ─────────────────────────── */
+        @keyframes fadeSlideDown {
+            from { opacity:0; transform:translateY(-12px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes fadeSlideUp {
+            from { opacity:0; transform:translateY(12px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
+<!-- ══ SIDEBAR ══════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sb-collapse">
+        <button title="Collapse"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="logo">
-            <i class="fa-solid fa-bolt"></i> <span>{{ project_name }}</span>
+    <nav class="sb-nav">
+        <a href="/" class="sb-item active">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </a>
+        <a href="/prompts" class="sb-item">
+            <i class="fa-solid fa-list-check"></i> Prompts
+        </a>
+        <a href="/evaluation" class="sb-item">
+            <i class="fa-solid fa-scale-balanced"></i> Evaluation
+        </a>
+        <a href="/models" class="sb-item">
+            <i class="fa-solid fa-microchip"></i> Models
+        </a>
+        <a href="#" class="sb-item">
+            <i class="fa-solid fa-server"></i> CI/CD Logs
+        </a>
+        <a href="/settings" class="sb-item">
+            <i class="fa-solid fa-gear"></i> Settings
+        </a>
+    </nav>
+
+    <div class="sb-section-title"><i class="fa-solid fa-clock-rotate-left"></i> History <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i></div>
+    <div class="sb-history-item">Summarize ML dialogue</div>
+    <div class="sb-history-item">BERT-Seq2Seq Phase 3 eval</div>
+    <div class="sb-see-all">See all</div>
+
+    <div class="sb-bottom">
+        <div class="user-avatar">S</div>
+    </div>
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════ -->
+<main class="main">
+
+    <!-- Top-right: metric pills + actions -->
+    <div class="topbar-right">
+        <div class="metric-pills">
+            <div class="mpill"><i class="fa-regular fa-file-code"></i> <strong id="activePrompts">--</strong></div>
+            <div class="mpill"><i class="fa-solid fa-star-half-stroke"></i> <strong id="latestScore">--</strong></div>
+            <div class="mpill"><i class="fa-solid fa-microchip"></i> <strong id="modelVersion" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">--</strong></div>
+        </div>
+        <button class="topbar-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Inference</button>
+        <button class="topbar-btn"><i class="fa-solid fa-lock"></i> Private</button>
+    </div>
+
+    <!-- Centered Hero -->
+    <div class="hero">
+
+        <!-- Logo -->
+        <div class="hero-logo">
+            <i class="fa-solid fa-bolt hero-logo-icon"></i>
+            <span class="hero-logo-text">{{ project_name }}</span>
         </div>
 
-        <nav>
-            <a href="/" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-            <a href="/prompts"><i class="fa-solid fa-list-check"></i> Prompts</a>
-            <a href="/evaluation"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
-            <a href="/models"><i class="fa-solid fa-microchip"></i> Models</a>
-            <a href="#"><i class="fa-solid fa-server"></i> CI/CD Logs</a>
-            <a href="/settings"><i class="fa-solid fa-gear"></i> Settings</a>
-        </nav>
+        <!-- Input bar -->
+        <div class="input-bar-wrap">
+            <div class="input-bar" id="inferenceBar">
+                <i class="fa-solid fa-microphone bar-left-icon"></i>
 
-        <div class="sidebar-footer">
-            <p>Version {{ version }}</p>
-        </div>
-    </aside>
+                <textarea
+                    id="dialogueInput"
+                    class="bar-input"
+                    placeholder="What do you want to summarize?"
+                    rows="1"
+                    oninput="autoResize(this)"
+                ></textarea>
 
-    <!-- Main Content -->
-    <main class="main-content">
-
-        <header class="topbar">
-            <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Search prompts, evaluations..." />
-            </div>
-            <button class="btn-primary">
-                <i class="fa-solid fa-plus"></i>
-                New Prompt
-            </button>
-        </header>
-
-        <section class="hero">
-            <h1>Platform Overview</h1>
-            <p>Design • Evaluate • Deploy • Monitor AI applications efficiently.</p>
-        </section>
-
-        <!-- Metrics Grid -->
-        <section class="cards-grid">
-            <div class="card">
-                <header class="card-header">
-                    <h3>Active Prompts</h3>
-                    <div class="card-icon"><i class="fa-regular fa-file-code"></i></div>
-                </header>
-                <p class="metric-value" id="activePrompts">--</p>
-            </div>
-
-            <div class="card">
-                <header class="card-header">
-                    <h3>Latest Eval Score</h3>
-                    <div class="card-icon"><i class="fa-solid fa-star-half-stroke"></i></div>
-                </header>
-                <p class="metric-value" id="latestScore">--</p>
-            </div>
-
-            <div class="card">
-                <header class="card-header">
-                    <h3>Current Model</h3>
-                    <div class="card-icon"><i class="fa-solid fa-network-wired"></i></div>
-                </header>
-                <p class="metric-value" id="modelVersion" style="font-size: 20px;">--</p>
-            </div>
-        </section>
-
-        <!-- Testing Console -->
-        <section class="console-section">
-            <div class="console-card">
-                <div class="console-header">
-                    <div class="console-title">
-                        <i class="fa-solid fa-terminal"></i> Model Inference Console
-                    </div>
-                </div>
-                
-                <div class="console-body">
-                    <!-- Model Selection -->
-                    <div class="input-group" style="margin-bottom: 15px;">
-                        <label for="modelSelect" style="color: #ffffff;">Select Model</label>
-                        <select id="modelSelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--surface); color: #ffffff; font-size: 14px;" onchange="this.style.color = this.value ? '#ffffff' : '#888888'">
-                            <option value="" disabled selected style="color: #888888;">-- Select Model --</option>
-                            <option style="color: black;" value="custom">Custom Model (Seq2Seq Transformer)</option>
-                            <option style="color: black;" value="pretrained">Pre-trained Model (BART SAMSum)</option>
+                <div class="bar-right">
+                    <!-- Model pill (replaces "Auto") -->
+                    <div class="model-pill-wrap">
+                        <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
+                            <option value="" disabled selected>Model ▾</option>
+                            <option value="custom">Custom (Seq2Seq)</option>
+                            <option value="pretrained">BART SAMSum</option>
                         </select>
+                        <i class="fa-solid fa-chevron-down pill-chevron"></i>
                     </div>
 
-                    <!-- Input Area -->
-                    <div class="input-group">
-                        <label for="dialogueInput">Dialogue Input</label>
-                        <textarea id="dialogueInput" placeholder="Paste dialogue here... (e.g., A: Hi there! B: Hello!)"></textarea>
-                    </div>
-
-                    <!-- Output Area -->
-                    <div class="output-group">
-                        <label>Generated Summary</label>
-                        <div class="output-panel">
-                            <div class="output-label">
-                                <i class="fa-solid fa-robot"></i> Output
-                            </div>
-                            <div id="summaryOutput">
-                                <span class="placeholder-text">Run the model to see results...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Footer -->
-                <div class="action-row">
-                    <button class="btn-primary" id="summarizeBtn" onclick="testSummarize()">
-                        <span>Generate Summary</span>
-                        <i class="fa-solid fa-wand-magic-sparkles" id="btnIcon"></i>
+                    <!-- Send button -->
+                    <button class="send-btn" id="summarizeBtn" onclick="testSummarize()" title="Generate Summary">
+                        <i class="fa-solid fa-arrow-up" id="btnIcon"></i>
                         <svg class="spinner" id="btnSpinner" viewBox="0 0 50 50">
                             <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
                         </svg>
                     </button>
                 </div>
             </div>
-        </section>
 
-    </main>
-</div>
+            <!-- Output result -->
+            <div class="output-panel" id="outputPanel">
+                <div id="outputModelTag" class="output-tag"></div>
+                <div id="summaryOutput">
+                    <span class="placeholder-text">Run the model to see results...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action chips -->
+        <div class="action-chips">
+            <button class="chip" onclick="fillSample()">
+                <i class="fa-solid fa-comment-dots"></i> Try a sample dialogue
+            </button>
+            <button class="chip" onclick="clearAll()">
+                <i class="fa-solid fa-rotate-left"></i> Clear
+            </button>
+        </div>
+
+    </div>
+</main>
 
 </body>
 </html>

@@ -5,181 +5,427 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }} — Settings</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ─── Reset & Layout matching Grok UI ───────────────── */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #ececec;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ───────────────────────────── */
+        .sidebar {
+            width: 200px;
+            min-width: 200px;
+            background: #0d0d0d;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 0;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        /* collapse button row */
+        .sb-collapse {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 14px 12px;
+        }
+        .sb-collapse button {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .sb-collapse button:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+
+        /* Nav items */
+        .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+
+        .sb-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        .sb-item i { width: 18px; text-align: center; font-size: 15px; }
+        .sb-item:hover { background: rgba(255,255,255,0.06); color: #eee; }
+        .sb-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+
+        .sb-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            padding: 14px 20px 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sb-section-title i { font-size: 11px; }
+
+        .sb-history-item {
+            padding: 7px 20px;
+            font-size: 13px;
+            color: #888;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.15s;
+        }
+        .sb-history-item:hover { color: #ccc; }
+
+        .sb-see-all {
+            padding: 4px 20px 12px;
+            font-size: 13px;
+            color: #4a7cf7;
+            cursor: pointer;
+        }
+        .sb-see-all:hover { text-decoration: underline; }
+
+        .sb-bottom {
+            margin-top: auto;
+            padding: 12px;
+        }
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* ─── Main Content ───────────────────────── */
+        .main {
+            flex: 1;
+            padding: 36px 48px;
+            overflow-y: auto;
+            background: #000;
+            /* Scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+        .page-title {
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+        .page-title i { color: #8b5cf6; }
+        .page-subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* ─── Settings Grid & Cards ─────────────── */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            animation: fadeSlideUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 22px;
+            transition: border-color 0.2s;
+        }
+        .settings-card:hover {
+            border-color: rgba(255,255,255,0.18);
+        }
+
+        .settings-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .settings-card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .settings-card-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #eee;
+        }
+
+        .settings-table {
+            display: flex;
+            flex-direction: column;
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+        .settings-label {
+            color: #777;
+            font-size: 13.5px;
+            font-weight: 500;
+        }
+        .settings-value {
+            color: #ccc;
+            font-size: 13.5px;
+            font-weight: 600;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+        .badge-error { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+        .badge-muted { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+    </style>
 </head>
 <body>
 
-<div class="container">
+<!-- ══ SIDEBAR (Grok Style) ═════════════════════ -->
+<aside class="sidebar">
+    <div class="sb-collapse">
+        <button title="Collapse"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="logo">
-            <i class="fa-solid fa-bolt"></i> <span>{{ project_name }}</span>
-        </div>
+    <nav class="sb-nav">
+        <a href="/" class="sb-item">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </a>
+        <a href="/prompts" class="sb-item">
+            <i class="fa-solid fa-list-check"></i> Prompts
+        </a>
+        <a href="/evaluation" class="sb-item">
+            <i class="fa-solid fa-scale-balanced"></i> Evaluation
+        </a>
+        <a href="/models" class="sb-item">
+            <i class="fa-solid fa-microchip"></i> Models
+        </a>
+        <a href="#" class="sb-item">
+            <i class="fa-solid fa-server"></i> CI/CD Logs
+        </a>
+        <a href="/settings" class="sb-item active">
+            <i class="fa-solid fa-gear"></i> Settings
+        </a>
+    </nav>
 
-        <nav>
-            <a href="/"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-            <a href="/prompts"><i class="fa-solid fa-list-check"></i> Prompts</a>
-            <a href="/evaluation"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
-            <a href="/models"><i class="fa-solid fa-microchip"></i> Models</a>
-            <a href="#"><i class="fa-solid fa-server"></i> CI/CD Logs</a>
-            <a href="/settings" class="active"><i class="fa-solid fa-gear"></i> Settings</a>
-        </nav>
+    <div class="sb-section-title"><i class="fa-solid fa-clock-rotate-left"></i> History <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i></div>
+    <div class="sb-history-item">Summarize ML dialogue</div>
+    <div class="sb-history-item">BERT-Seq2Seq Phase 3 eval</div>
+    <div class="sb-see-all">See all</div>
 
-        <div class="sidebar-footer">
-            <p>Version {{ version }}</p>
-        </div>
-    </aside>
+    <div class="sb-bottom">
+        <div class="user-avatar">S</div>
+    </div>
+</aside>
 
-    <!-- Main Content -->
-    <main class="main-content">
+<!-- ══ MAIN CONTENT ═════════════════════════════ -->
+<main class="main">
 
-        <header class="topbar">
-            <div>
-                <h1 class="page-title"><i class="fa-solid fa-gear"></i> Settings</h1>
-                <p class="page-subtitle">Model configuration, training parameters, and system info</p>
+    <header class="page-header">
+        <h1 class="page-title"><i class="fa-solid fa-gear"></i> Settings</h1>
+        <p class="page-subtitle">Model configuration, training parameters, and system info</p>
+    </header>
+
+    <!-- Settings Grid -->
+    <div class="settings-grid">
+
+        <!-- Model Architecture -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h2>Model Architecture</h2>
             </div>
-        </header>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">Architecture</span>
+                    <span class="settings-value" id="archType">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Encoder</span>
+                    <span class="settings-value" id="encoderType">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Hidden Size (d_model)</span>
+                    <span class="settings-value" id="dModel">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Attention Heads</span>
+                    <span class="settings-value" id="nHeads">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Encoder Layers</span>
+                    <span class="settings-value" id="encLayers">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Decoder Layers</span>
+                    <span class="settings-value" id="decLayers">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Feed-Forward Size</span>
+                    <span class="settings-value" id="dFF">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Vocabulary Size</span>
+                    <span class="settings-value" id="vocabSize">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Max Sequence Length</span>
+                    <span class="settings-value" id="maxSeqLen">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Dropout</span>
+                    <span class="settings-value" id="dropout">—</span>
+                </div>
+            </div>
+        </section>
 
-        <!-- Settings Grid -->
-        <div class="settings-grid">
+        <!-- Training Configuration -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+                <h2>Training Configuration</h2>
+            </div>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">Pretrained Encoder</span>
+                    <span class="settings-value" id="pretrainedEncoder">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">BERT Hidden Size</span>
+                    <span class="settings-value" id="bertHidden">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Freeze Encoder Epochs</span>
+                    <span class="settings-value" id="freezeEpochs">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Label Smoothing</span>
+                    <span class="settings-value" id="labelSmoothing">—</span>
+                </div>
+            </div>
+        </section>
 
-            <!-- Model Architecture -->
-            <section class="settings-card">
-                <div class="settings-card-header">
-                    <div class="settings-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
-                        <i class="fa-solid fa-brain"></i>
-                    </div>
-                    <h2>Model Architecture</h2>
+        <!-- Quality Gate -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <div class="settings-table">
-                    <div class="settings-row">
-                        <span class="settings-label">Architecture</span>
-                        <span class="settings-value" id="archType">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Encoder</span>
-                        <span class="settings-value" id="encoderType">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Hidden Size (d_model)</span>
-                        <span class="settings-value" id="dModel">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Attention Heads</span>
-                        <span class="settings-value" id="nHeads">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Encoder Layers</span>
-                        <span class="settings-value" id="encLayers">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Decoder Layers</span>
-                        <span class="settings-value" id="decLayers">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Feed-Forward Size</span>
-                        <span class="settings-value" id="dFF">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Vocabulary Size</span>
-                        <span class="settings-value" id="vocabSize">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Max Sequence Length</span>
-                        <span class="settings-value" id="maxSeqLen">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Dropout</span>
-                        <span class="settings-value" id="dropout">—</span>
-                    </div>
+                <h2>Quality Gate</h2>
+            </div>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">ROUGE-L Threshold</span>
+                    <span class="settings-value" id="threshold">—</span>
                 </div>
-            </section>
+                <div class="settings-row">
+                    <span class="settings-label">Gate Status</span>
+                    <span class="settings-value" id="gateStatus">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Last Evaluation</span>
+                    <span class="settings-value" id="lastEval">—</span>
+                </div>
+            </div>
+        </section>
 
-            <!-- Training Configuration -->
-            <section class="settings-card">
-                <div class="settings-card-header">
-                    <div class="settings-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
-                        <i class="fa-solid fa-dumbbell"></i>
-                    </div>
-                    <h2>Training Configuration</h2>
+        <!-- System Info -->
+        <section class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                    <i class="fa-solid fa-server"></i>
                 </div>
-                <div class="settings-table">
-                    <div class="settings-row">
-                        <span class="settings-label">Pretrained Encoder</span>
-                        <span class="settings-value" id="pretrainedEncoder">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">BERT Hidden Size</span>
-                        <span class="settings-value" id="bertHidden">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Freeze Encoder Epochs</span>
-                        <span class="settings-value" id="freezeEpochs">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Label Smoothing</span>
-                        <span class="settings-value" id="labelSmoothing">—</span>
-                    </div>
+                <h2>System Info</h2>
+            </div>
+            <div class="settings-table">
+                <div class="settings-row">
+                    <span class="settings-label">Checkpoint Path</span>
+                    <span class="settings-value" id="ckptPath">—</span>
                 </div>
-            </section>
+                <div class="settings-row">
+                    <span class="settings-label">Checkpoint Exists</span>
+                    <span class="settings-value" id="ckptExists">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Prompts Directory</span>
+                    <span class="settings-value" id="promptsDir">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Prompt Count</span>
+                    <span class="settings-value" id="promptCount">—</span>
+                </div>
+            </div>
+        </section>
 
-            <!-- Quality Gate -->
-            <section class="settings-card">
-                <div class="settings-card-header">
-                    <div class="settings-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <h2>Quality Gate</h2>
-                </div>
-                <div class="settings-table">
-                    <div class="settings-row">
-                        <span class="settings-label">ROUGE-L Threshold</span>
-                        <span class="settings-value" id="threshold">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Gate Status</span>
-                        <span class="settings-value" id="gateStatus">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Last Evaluation</span>
-                        <span class="settings-value" id="lastEval">—</span>
-                    </div>
-                </div>
-            </section>
+    </div>
 
-            <!-- System Info -->
-            <section class="settings-card">
-                <div class="settings-card-header">
-                    <div class="settings-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
-                        <i class="fa-solid fa-server"></i>
-                    </div>
-                    <h2>System Info</h2>
-                </div>
-                <div class="settings-table">
-                    <div class="settings-row">
-                        <span class="settings-label">Checkpoint Path</span>
-                        <span class="settings-value" id="ckptPath">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Checkpoint Exists</span>
-                        <span class="settings-value" id="ckptExists">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Prompts Directory</span>
-                        <span class="settings-value" id="promptsDir">—</span>
-                    </div>
-                    <div class="settings-row">
-                        <span class="settings-label">Prompt Count</span>
-                        <span class="settings-value" id="promptCount">—</span>
-                    </div>
-                </div>
-            </section>
-
-        </div>
-
-    </main>
-</div>
+</main>
 
 <script>
 async function loadSettings() {
