@@ -29,7 +29,6 @@ async def run_summarization(request: SummarizationRequest):
         try:
             if pretrained_summarizer is None:
                 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-                import torch
                 _model_name = "philschmid/bart-large-cnn-samsum"
                 _tokenizer = AutoTokenizer.from_pretrained(_model_name)
                 _model = AutoModelForSeq2SeqLM.from_pretrained(_model_name)
@@ -187,7 +186,6 @@ async def settings():
         },
     }
 
-<<<<<<< HEAD
 @router.get("/evaluation/data")
 async def evaluation_data():
     """Return specific evaluation data and leaderboard metrics."""
@@ -239,5 +237,3 @@ async def evaluation_data():
         "custom": custom_metrics,
         "baseline": baseline_metrics
     }
-=======
->>>>>>> c8343b3f8634feda80f22db7e5e5990bd32a9255

@@ -22,6 +22,8 @@ class SummarizationRequest(BaseModel):
     num_beams: Optional[int] = 8
     model_choice: Optional[str] = "custom"
 
+    model_config = {"protected_namespaces": ()}
+
 
 class SummarizationResponse(BaseModel):
     """Response schema for summarization."""
