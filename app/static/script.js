@@ -40,9 +40,18 @@ async function testSummarize() {
     const spinner = document.getElementById("btnSpinner");
     const btnText = btn.querySelector("span");
     
+    const modelSelect = document.getElementById("modelSelect");
+    const selectedModel = modelSelect ? modelSelect.value : "custom";
+
     if (!dialogue.trim()) {
         outputElem.innerHTML = '<span style="color: var(--error);"><i class="fa-solid fa-triangle-exclamation"></i> Please enter a dialogue first.</span>';
         document.getElementById("dialogueInput").focus();
+        return;
+    }
+
+    if (!selectedModel) {
+        outputElem.innerHTML = '<span style="color: var(--error);"><i class="fa-solid fa-triangle-exclamation"></i> Please select a model first.</span>';
+        modelSelect.focus();
         return;
     }
 
@@ -63,7 +72,7 @@ async function testSummarize() {
             body: JSON.stringify({
                 dialogue: dialogue,
                 num_beams: 8,
-                model_choice: document.getElementById("modelSelect") ? document.getElementById("modelSelect").value : "custom"
+                model_choice: selectedModel
             })
         });
 

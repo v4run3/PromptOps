@@ -91,10 +91,11 @@
                 <div class="console-body">
                     <!-- Model Selection -->
                     <div class="input-group" style="margin-bottom: 15px;">
-                        <label for="modelSelect">Select Model</label>
-                        <select id="modelSelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--surface); color: var(--text-main); font-size: 14px;">
-                            <option value="custom">Custom Model (Seq2Seq Transformer)</option>
-                            <option value="pretrained">Pre-trained Model (BART SAMSum)</option>
+                        <label for="modelSelect" style="color: #ffffff;">Select Model</label>
+                        <select id="modelSelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--surface); color: #ffffff; font-size: 14px;" onchange="this.style.color = this.value ? '#ffffff' : '#888888'">
+                            <option value="" disabled selected style="color: #888888;">-- Select Model --</option>
+                            <option style="color: black;" value="custom">Custom Model (Seq2Seq Transformer)</option>
+                            <option style="color: black;" value="pretrained">Pre-trained Model (BART SAMSum)</option>
                         </select>
                     </div>
 

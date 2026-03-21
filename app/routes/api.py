@@ -28,12 +28,25 @@ async def run_summarization(request: SummarizationRequest):
         global pretrained_summarizer
         try:
             if pretrained_summarizer is None:
-                from transformers import pipeline
-                pretrained_summarizer = pipeline("summarization", model="philschmid/bart-large-cnn-samsum")
-            
-            result = pretrained_summarizer(request.dialogue, max_length=130, min_length=30, do_sample=False)
+                from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+                import torch
+                _model_name = "philschmid/bart-large-cnn-samsum"
+                _tokenizer = AutoTokenizer.from_pretrained(_model_name)
+                _model = AutoModelForSeq2SeqLM.from_pretrained(_model_name)
+                pretrained_summarizer = (_tokenizer, _model)
+
+            tokenizer, model = pretrained_summarizer
+            inputs = tokenizer(request.dialogue, return_tensors="pt", max_length=1024, truncation=True)
+            summary_ids = model.generate(
+                inputs["input_ids"],
+                num_beams=request.num_beams,
+                max_length=130,
+                min_length=30,
+                early_stopping=True
+            )
+            summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
             return SummarizationResponse(
-                summary=result[0]['summary_text'],
+                summary=summary,
                 model_version="philschmid/bart-large-cnn-samsum"
             )
         except Exception as e:
