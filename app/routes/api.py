@@ -39,8 +39,10 @@ async def run_summarization(request: SummarizationRequest):
             summary_ids = model.generate(
                 inputs["input_ids"],
                 num_beams=request.num_beams,
-                max_length=130,
-                min_length=30,
+                max_length=60,
+                min_length=10,
+                length_penalty=0.5,
+                no_repeat_ngram_size=3,
                 early_stopping=True
             )
             summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
