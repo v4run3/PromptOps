@@ -21,3 +21,11 @@ async def settings(request: Request):
         "version": "v1.0"
     })
 
+@router.get("/evaluation", response_class=HTMLResponse)
+async def evaluation(request: Request):
+    return templates.TemplateResponse("evaluation.html", {
+        "request": request,
+        "project_name": "PromptOps",
+        "version": "v1.0"
+    })
+

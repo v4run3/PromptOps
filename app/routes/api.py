@@ -157,3 +157,55 @@ async def settings():
             "prompt_count": prompt_count,
         },
     }
+
+@router.get("/evaluation/data")
+async def evaluation_data():
+    """Return specific evaluation data and leaderboard metrics."""
+    # Data for the Custom Model from eval/results.json
+    custom_metrics = {
+        "model_name": "No data",
+        "rouge_1": 0.0,
+        "rouge_2": 0.0,
+        "rouge_l": 0.0,
+        "val_loss": 0.0,
+        "epochs": 0,
+        "status": "No data",
+        "threshold": 0.0,
+        "timestamp": "Never"
+    }
+
+    if EVAL_RESULTS_PATH.exists():
+        try:
+            with open(EVAL_RESULTS_PATH, "r") as f:
+                res = json.load(f)
+            custom_metrics = {
+                "model_name": res.get("model_name", "Custom Seq2Seq"),
+                "rouge_1": res.get("rouge_1", 0.0),
+                "rouge_2": res.get("rouge_2", 0.0),
+                "rouge_l": res.get("rouge_l", 0.0),
+                "val_loss": res.get("val_loss", 0.0),
+                "epochs": res.get("epochs_trained", 0),
+                "status": res.get("quality_gate", "UNKNOWN"),
+                "threshold": res.get("threshold", 0.0),
+                "timestamp": res.get("timestamp", "Never")
+            }
+        except Exception:
+            pass
+
+    # Stub the SOTA Baseline data to compare against
+    baseline_metrics = {
+        "model_name": "BART SAMSum (Pretrained)",
+        "rouge_1": 0.5312,
+        "rouge_2": 0.2831,
+        "rouge_l": 0.4357,
+        "val_loss": "N/A",
+        "epochs": "Pretrained",
+        "status": "PASS",
+        "threshold": custom_metrics["threshold"],
+        "timestamp": "Pre-calculated Baseline"
+    }
+
+    return {
+        "custom": custom_metrics,
+        "baseline": baseline_metrics
+    }

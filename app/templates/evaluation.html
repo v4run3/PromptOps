@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} — Evaluation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ─── Reset & Layout matching Grok UI ───────────────── */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #ececec;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ───────────────────────────── */
+        .sidebar {
+            width: 200px;
+            min-width: 200px;
+            background: #0d0d0d;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 0;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .sb-collapse {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 14px 12px;
+        }
+        .sb-collapse button {
+            background: none; border: none; color: #555; cursor: pointer;
+            font-size: 13px; padding: 4px 8px; border-radius: 6px; transition: color 0.2s, background 0.2s;
+        }
+        .sb-collapse button:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+
+        .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+
+        .sb-item {
+            display: flex; align-items: center; gap: 12px; padding: 9px 12px;
+            border-radius: 8px; text-decoration: none; color: #aaa; font-size: 14px;
+            font-weight: 500; transition: background 0.15s, color 0.15s;
+        }
+        .sb-item i { width: 18px; text-align: center; font-size: 15px; }
+        .sb-item:hover { background: rgba(255,255,255,0.06); color: #eee; }
+        .sb-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+
+        .sb-section-title {
+            font-size: 12px; font-weight: 600; color: #555; padding: 14px 20px 6px;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .sb-history-item {
+            padding: 7px 20px; font-size: 13px; color: #888; cursor: pointer;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sb-history-item:hover { color: #ccc; }
+
+        .sb-see-all { padding: 4px 20px 12px; font-size: 13px; color: #4a7cf7; cursor: pointer; }
+        .sb-see-all:hover { text-decoration: underline; }
+
+        .sb-bottom { margin-top: auto; padding: 12px; }
+        .user-avatar {
+            width: 34px; height: 34px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600; color: #fff; cursor: pointer;
+        }
+
+        /* ─── Main Content ───────────────────────── */
+        .main {
+            flex: 1; padding: 36px 48px; overflow-y: auto; background: #000;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+            position: relative;
+        }
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+
+        .page-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .page-title {
+            font-size: 26px; font-weight: 700; display: flex; align-items: center;
+            gap: 12px; letter-spacing: -0.5px;
+        }
+        .page-title i { color: #f59e0b; }
+        .page-subtitle { color: #888; font-size: 14px; margin-top: 6px; }
+
+        .action-btn {
+            background: #eee; color: #000; padding: 10px 20px; border: none;
+            border-radius: 20px; font-weight: 600; font-size: 13.5px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+        .action-btn:hover { opacity: 0.85; transform: scale(1.02); }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ─── Cards ─────────────────────────────── */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+        
+        .card {
+            background: #111; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 20px; transition: border-color 0.2s;
+        }
+        .card:hover { border-color: rgba(255,255,255,0.18); }
+        
+        .metric-title { color: #777; font-size: 13px; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .metric-value { font-size: 24px; font-weight: 700; color: #eee; }
+        .metric-sub { font-size: 12px; color: #555; margin-top: 4px; }
+
+        /* ─── Leaderboard ───────────────────────── */
+        .leaderboard-wrap {
+            animation: fadeSlideUp 0.5s ease-out 0.1s both;
+        }
+        .leaderboard-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+        }
+        .leaderboard-header h2 { font-size: 16px; font-weight: 600; color: #eee; }
+        
+        .table-responsive {
+            background: #111; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            background: rgba(255,255,255,0.02); color: #888; font-weight: 500;
+            font-size: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        td {
+            padding: 14px 16px; font-size: 14px; color: #ccc;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.015); }
+
+        .model-td { font-weight: 600; color: #eee; display: flex; align-items: center; gap: 10px; }
+        .badge-trophy { color: #fbbf24; font-size: 14px; }
+
+        .score-bar-wrap { width: 100%; max-width: 120px; height: 6px; background: #222; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+        .score-bar { height: 100%; background: #3b82f6; border-radius: 4px; }
+        .score-bar.winner { background: #10b981; }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+        .badge-error { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+
+        /* Loader */
+        .loader-overlay {
+            position: absolute; top: 0; left: 0; right:0; bottom:0;
+            background: rgba(0,0,0,0.7); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 10;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loader-overlay.active { opacity: 1; pointer-events: all; }
+        .spinner { animation: spin 1s linear infinite; width: 34px; height: 34px; margin-bottom: 12px;}
+        .spinner .path { stroke: #fff; stroke-linecap: round; animation: dash 1.5s ease-in-out infinite; stroke-width: 4; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+            100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR (Grok Style) ═════════════════════ -->
+<aside class="sidebar">
+    <div class="sb-collapse">
+        <button title="Collapse"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
+    <nav class="sb-nav">
+        <a href="/" class="sb-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a href="/prompts" class="sb-item"><i class="fa-solid fa-list-check"></i> Prompts</a>
+        <a href="/evaluation" class="sb-item active"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
+        <a href="/models" class="sb-item"><i class="fa-solid fa-microchip"></i> Models</a>
+        <a href="#" class="sb-item"><i class="fa-solid fa-server"></i> CI/CD Logs</a>
+        <a href="/settings" class="sb-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </nav>
+    <div class="sb-section-title"><i class="fa-solid fa-clock-rotate-left"></i> History <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i></div>
+    <div class="sb-history-item">Summarize ML dialogue</div>
+    <div class="sb-history-item">BERT-Seq2Seq Phase 3 eval</div>
+    <div class="sb-see-all">See all</div>
+    <div class="sb-bottom"><div class="user-avatar">S</div></div>
+</aside>
+
+<!-- ══ MAIN CONTENT ═════════════════════════════ -->
+<main class="main" id="mainArea">
+    
+    <div class="loader-overlay" id="loader">
+        <svg class="spinner" viewBox="0 0 50 50"><circle class="path" cx="25" cy="25" r="20" fill="none"></circle></svg>
+        <div style="color:#eee; font-size:14px; font-weight:500;">Running Evaluation Pipeline...</div>
+    </div>
+
+    <header class="page-header">
+        <div>
+            <h1 class="page-title"><i class="fa-solid fa-scale-balanced"></i> Evaluation</h1>
+            <p class="page-subtitle">Track, compare, and validate model performance metrics</p>
+        </div>
+        <button class="action-btn" onclick="runEval()">
+            <i class="fa-solid fa-play"></i> Run Pipeline
+        </button>
+    </header>
+
+    <!-- Top Metrics -->
+    <div class="metrics-grid">
+        <div class="card">
+            <div class="metric-title"><i class="fa-solid fa-microchip"></i> Active Model</div>
+            <div class="metric-value" id="topModel">—</div>
+            <div class="metric-sub" id="topEpochs">Trained Epochs: —</div>
+        </div>
+        <div class="card">
+            <div class="metric-title"><i class="fa-solid fa-scroll"></i> Latest ROUGE-L</div>
+            <div class="metric-value" id="topRouge" style="color:#a78bfa">—</div>
+            <div class="metric-sub" id="topLoss">Val Loss: —</div>
+        </div>
+        <div class="card">
+            <div class="metric-title"><i class="fa-solid fa-shield-halved"></i> Quality Gate</div>
+            <div class="metric-value" id="topGate" style="font-size: 20px; display:flex; align-items:center; height:100%;">
+                <span class="badge badge-muted">Loading</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="metric-title"><i class="fa-regular fa-clock"></i> Last Run</div>
+            <div class="metric-value" id="topTime" style="font-size: 16px; margin-top:8px;">—</div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="leaderboard-wrap">
+        <div class="leaderboard-header">
+            <i class="fa-solid fa-trophy" style="color: #fbbf24;"></i>
+            <h2>Model Leaderboard</h2>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>MODEL</th>
+                        <th>ROUGE-1</th>
+                        <th>ROUGE-2</th>
+                        <th>ROUGE-L</th>
+                        <th>GATE STATUS</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <tr><td colspan="5" style="text-align:center; padding:24px 0;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+async function loadEvalData() {
+    try {
+        const res = await fetch('/api/evaluation/data');
+        const data = await res.json();
+        
+        // Populate Top Cards (using custom model data)
+        const custom = data.custom;
+        document.getElementById("topModel").textContent = custom.model_name;
+        document.getElementById("topEpochs").textContent = `Trained Epochs: ${custom.epochs}`;
+        document.getElementById("topRouge").textContent = custom.rouge_l.toFixed(4);
+        document.getElementById("topLoss").textContent = `Val Loss: ${custom.val_loss}`;
+        document.getElementById("topTime").textContent = custom.timestamp.replace('T', ' ');
+
+        const gateEl = document.getElementById("topGate");
+        if(custom.status === "PASS") {
+            gateEl.innerHTML = '<span class="badge badge-success" style="font-size:14px; padding:6px 12px;"><i class="fa-solid fa-check"></i> PASS</span>';
+        } else if (custom.status === "FAIL") {
+            gateEl.innerHTML = '<span class="badge badge-error" style="font-size:14px; padding:6px 12px;"><i class="fa-solid fa-xmark"></i> FAIL</span>';
+        } else {
+            gateEl.innerHTML = `<span class="badge badge-muted">${custom.status}</span>`;
+        }
+
+        // Leaderboard Logic
+        const base = data.baseline;
+        const baselineWins = base.rouge_l > custom.rouge_l;
+
+        const maxR1 = Math.max(custom.rouge_1, base.rouge_1);
+        const maxR2 = Math.max(custom.rouge_2, base.rouge_2);
+        const maxRL = Math.max(custom.rouge_l, base.rouge_l);
+
+        function renderRow(model, isWinner) {
+            const r1Pct = (model.rouge_1 / maxR1) * 100;
+            const r2Pct = (model.rouge_2 / maxR2) * 100;
+            const rlPct = (model.rouge_l / maxRL) * 100;
+
+            const r1Color = (model.rouge_1 === maxR1) ? 'winner' : '';
+            const r2Color = (model.rouge_2 === maxR2) ? 'winner' : '';
+            const rlColor = (model.rouge_l === maxRL) ? 'winner' : '';
+
+            const statusHtml = model.status === 'PASS' 
+                ? '<span class="badge badge-success">PASS</span>'
+                : '<span class="badge badge-error">FAIL</span>';
+
+            const winnerIcon = isWinner ? '<i class="fa-solid fa-crown badge-trophy"></i>' : '';
+
+            return `
+                <tr>
+                    <td class="model-td">${winnerIcon} ${model.model_name}</td>
+                    <td>
+                        <div>${model.rouge_1.toFixed(4)}</div>
+                        <div class="score-bar-wrap"><div class="score-bar ${r1Color}" style="width:${r1Pct}%"></div></div>
+                    </td>
+                    <td>
+                        <div>${model.rouge_2.toFixed(4)}</div>
+                        <div class="score-bar-wrap"><div class="score-bar ${r2Color}" style="width:${r2Pct}%"></div></div>
+                    </td>
+                    <td>
+                        <div style="color:#eee; font-weight:600;">${model.rouge_l.toFixed(4)}</div>
+                        <div class="score-bar-wrap"><div class="score-bar ${rlColor}" style="width:${rlPct}%"></div></div>
+                    </td>
+                    <td>${statusHtml}</td>
+                </tr>
+            `;
+        }
+
+        const lBody = document.getElementById("leaderboardBody");
+        if (baselineWins) {
+            lBody.innerHTML = renderRow(base, true) + renderRow(custom, false);
+        } else {
+            lBody.innerHTML = renderRow(custom, true) + renderRow(base, false);
+        }
+
+    } catch (e) {
+        console.error("Failed to load evaluation data", e);
+    }
+}
+
+function runEval() {
+    const loader = document.getElementById("loader");
+    loader.classList.add("active");
+    // Simulate an evaluation run
+    setTimeout(() => {
+        loader.classList.remove("active");
+        loadEvalData(); // reload
+    }, 2000);
+}
+
+document.addEventListener("DOMContentLoaded", loadEvalData);
+</script>
+
+</body>
+</html>
