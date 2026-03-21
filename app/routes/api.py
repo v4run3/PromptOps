@@ -14,6 +14,8 @@ CHECKPOINT_PATH = "checkpoints/best_model.pt"
 PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
 EVAL_RESULTS_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "results.json"
 
+pretrained_summarizer = None
+
 @router.get("/health")
 async def health_check():
     return {"status": "healthy"}
@@ -21,6 +23,22 @@ async def health_check():
 @router.post("/summarize", response_model=SummarizationResponse)
 async def run_summarization(request: SummarizationRequest):
     """Generate a summary for the given dialogue."""
+    
+    if request.model_choice == "pretrained":
+        global pretrained_summarizer
+        try:
+            if pretrained_summarizer is None:
+                from transformers import pipeline
+                pretrained_summarizer = pipeline("summarization", model="philschmid/bart-large-cnn-samsum")
+            
+            result = pretrained_summarizer(request.dialogue, max_length=130, min_length=30, do_sample=False)
+            return SummarizationResponse(
+                summary=result[0]['summary_text'],
+                model_version="philschmid/bart-large-cnn-samsum"
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Pretrained model error: {str(e)}")
+
     if not os.path.exists(CHECKPOINT_PATH):
         # Fallback for when the model hasn't finished training yet
         return SummarizationResponse(

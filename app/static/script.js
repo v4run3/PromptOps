@@ -62,7 +62,8 @@ async function testSummarize() {
             },
             body: JSON.stringify({
                 dialogue: dialogue,
-                num_beams: 8
+                num_beams: 8,
+                model_choice: document.getElementById("modelSelect") ? document.getElementById("modelSelect").value : "custom"
             })
         });
 
