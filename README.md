@@ -74,37 +74,42 @@ The API will be available at `http://127.0.0.1:8000`.
 python -m pytest tests/ -v
 ```
 
-## Model Training
+## Dashboard UI
 
-The project includes a custom **91M parameter Encoder-Decoder Transformer** for dialogue summarization.
+PromptOps includes a sleek, modern web dashboard for interacting with the models and viewing metrics.
+
+- **Dashboard:** Test prompts, summarize dialogue, and compare outputs.
+- **Evaluation:** View learning curves, ROUGE scores across different training phases (Phase 1, 2, and 3), and compare Custom vs. Baseline models.
+- **Settings:** Detailed view of model architectures, training configurations, and Quality Gate status.
+
+## Model Training & Phases
+
+The project has evolved through three training phases to demonstrate progressive improvement in dialogue summarization.
 
 ### Datasets
 
 | Dataset | Source | Samples | Domain |
 | :--- | :--- | :--- | :--- |
 | **SAMSum** | [knkarthick/samsum](https://huggingface.co/datasets/knkarthick/samsum) | ~16,000 | Messenger-style chat dialogues |
-| **DialogSum** (Phase 2) | [knkarthick/dialogsum](https://huggingface.co/datasets/knkarthick/dialogsum) | ~13,500 | Daily task-oriented dialogues |
+| **DialogSum** | [knkarthick/dialogsum](https://huggingface.co/datasets/knkarthick/dialogsum) | ~13,500 | Daily task-oriented dialogues |
 
-### Train the Model
+### Training Phases
 
 ```bash
-# Phase 1: SAMSum only (default)
+# Phase 1: Custom Transformer trained from scratch on SAMSum
 PYTHONPATH=. python scripts/train_model.py --epochs 50 --batch_size 32
 
-# Phase 2: SAMSum + DialogSum combined
+# Phase 2: Custom Transformer trained on SAMSum + DialogSum combined
 PYTHONPATH=. python scripts/train_model.py --epochs 50 --batch_size 32 --datasets samsum,dialogsum
 
-# Smoke test (fast, small subset)
-PYTHONPATH=. python scripts/train_model.py --epochs 2 --batch_size 4 --max_samples 100
-
-# Resume training: automatically resumes from checkpoints/best_model.pt if it exists
-# Save to Google Drive for Colab persistence:
-PYTHONPATH=. python scripts/train_model.py --epochs 50 --batch_size 32 \
+# Phase 3: BERT-Pretrained Encoder with Custom Decoder
+PYTHONPATH=. python scripts/train_model.py --epochs 10 --batch_size 16 \
     --datasets samsum,dialogsum \
-    --checkpoint_dir /content/drive/MyDrive/PromptOps/checkpoints
+    --pretrained_encoder \
+    --freeze_epochs 3
 ```
 
-### Model Architecture
+### Model Architecture (Custom/Phase 1-2)
 
 | Hyperparameter | Value | Description |
 | :--- | :--- | :--- |
@@ -136,18 +141,6 @@ If the ROUGE-L score falls below the threshold, the script exits with code `1` (
 docker build -t promptops .
 docker run -p 8000:8000 promptops
 ```
-
-## Roadmap
-
-- [x] Custom Transformer model (91M params) trained on SAMSum
-- [x] ROUGE-1, ROUGE-2, ROUGE-L evaluation metrics
-- [x] MLOps Quality Gate script
-- [x] CI/CD with GitHub Actions (lint + tests)
-- [x] Phase 2: Data augmentation with DialogSum
-- [ ] Prompt versioning and diff tracking
-- [ ] Dashboard UI for prompt management
-- [ ] LLM API integration (OpenAI, Anthropic) for comparative evaluation
-- [ ] Prompt A/B testing framework
 
 ## License
 
