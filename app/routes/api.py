@@ -29,7 +29,7 @@ async def run_summarization(request: SummarizationRequest):
         try:
             if pretrained_summarizer is None:
                 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-                _model_name = "facebook/bart-large-cnn"
+                _model_name = "philschmid/bart-large-cnn-samsum"
                 _tokenizer = AutoTokenizer.from_pretrained(_model_name)
                 _model = AutoModelForSeq2SeqLM.from_pretrained(_model_name)
                 pretrained_summarizer = (_tokenizer, _model)
@@ -48,7 +48,7 @@ async def run_summarization(request: SummarizationRequest):
             summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
             return SummarizationResponse(
                 summary=summary,
-                model_version="facebook/bart-large-cnn"
+                model_version="philschmid/bart-large-cnn-samsum"
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Pretrained model error: {str(e)}")
@@ -161,7 +161,7 @@ async def settings():
             "epochs_trained": eval_data.get("epochs_trained", "N/A"),
         },
         "hf_model": {
-            "name": "facebook/bart-large-cnn",
+            "name": "philschmid/bart-large-cnn-samsum",
             "type": "BART-Large (406M params)",
             "encoder": "BART Encoder (12 layers)",
             "decoder": "BART Decoder (12 layers)",

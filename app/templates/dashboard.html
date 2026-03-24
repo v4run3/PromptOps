@@ -385,6 +385,90 @@
             from { opacity:0; transform:translateY(12px); }
             to   { opacity:1; transform:translateY(0); }
         }
+
+        /* ─── Topbar Dropdown Panels ─────────────── */
+        .topbar-dropdown-wrap { position: relative; }
+        .topbar-btn.active { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
+
+        .topbar-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 240px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            z-index: 100;
+            animation: fadeSlideDown 0.2s ease-out;
+        }
+        .topbar-dropdown.open { display: block; }
+
+        .tdd-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #aaa;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .tdd-title i { color: #4a7cf7; }
+
+        .tdd-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+        .tdd-label { color: #666; font-size: 12.5px; }
+        .tdd-value { color: #ccc; font-size: 12.5px; font-weight: 600; }
+        .tdd-link { color: #4a7cf7; text-decoration: none; font-family: monospace; }
+        .tdd-link:hover { text-decoration: underline; }
+
+        .tdd-toggle-btn {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #aaa;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .tdd-toggle-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #eee;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
@@ -436,8 +520,59 @@
             <div class="mpill"><i class="fa-solid fa-star-half-stroke"></i> <strong id="latestScore">--</strong></div>
             <div class="mpill"><i class="fa-solid fa-microchip"></i> <strong id="modelVersion" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">--</strong></div>
         </div>
-        <button class="topbar-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Inference</button>
-        <button class="topbar-btn"><i class="fa-solid fa-lock"></i> Private</button>
+
+        <!-- Inference Button + Dropdown -->
+        <div class="topbar-dropdown-wrap">
+            <button class="topbar-btn" id="inferenceToggle" onclick="toggleInferencePanel()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Inference
+            </button>
+            <div class="topbar-dropdown" id="inferencePanel">
+                <div class="tdd-title"><i class="fa-solid fa-chart-bar"></i> Inference Stats</div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Last Latency</span>
+                    <span class="tdd-value" id="statLatency">—</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Total Requests</span>
+                    <span class="tdd-value" id="statRequests">0</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Avg Latency</span>
+                    <span class="tdd-value" id="statAvgLatency">—</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Model Loaded</span>
+                    <span class="tdd-value" id="statModelLoaded">No</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Server Status</span>
+                    <span class="tdd-value" id="statHealth" style="color:#34d399;">● Healthy</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Private Button -->
+        <div class="topbar-dropdown-wrap">
+            <button class="topbar-btn" id="privateToggle" onclick="togglePrivateMode()">
+                <i class="fa-solid fa-lock"></i> Private
+            </button>
+            <div class="topbar-dropdown" id="privatePanel">
+                <div class="tdd-title"><i class="fa-solid fa-shield-halved"></i> API Access</div>
+                <div class="tdd-row">
+                    <span class="tdd-label">API Docs</span>
+                    <a class="tdd-value tdd-link" href="/docs" target="_blank" id="apiDocsLink">/docs</a>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Mode</span>
+                    <span class="tdd-value" id="privacyMode" style="color:#34d399;">Public</span>
+                </div>
+                <div style="margin-top:10px;">
+                    <button class="tdd-toggle-btn" id="privacyBtn" onclick="switchPrivacy()">
+                        <i class="fa-solid fa-lock-open"></i> Switch to Private
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Centered Hero -->
@@ -468,7 +603,7 @@
                         <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
                             <option value="" disabled selected hidden>Model ▾</option>
                             <option value="custom">Custom (Seq2Seq)</option>
-                            <option value="pretrained">BART (Pretrained)</option>
+                            <option value="pretrained">BART SAMSum</option>
                         </select>
                         <i class="fa-solid fa-chevron-down pill-chevron"></i>
                     </div>
