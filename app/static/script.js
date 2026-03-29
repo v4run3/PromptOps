@@ -46,6 +46,21 @@ function fillSample() {
     autoResize(ta);
 }
 
+// ── Auto-load dialogue from Prompts page ────────
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = sessionStorage.getItem('promptops_use_dialogue');
+    if (saved) {
+        sessionStorage.removeItem('promptops_use_dialogue');
+        const ta = document.getElementById("dialogueInput");
+        if (ta) { ta.value = saved; autoResize(ta); ta.focus(); }
+        // Flash the textarea briefly to indicate auto-fill
+        if (ta) {
+            ta.style.borderColor = 'rgba(74,124,247,0.6)';
+            setTimeout(() => { ta.style.borderColor = ''; }, 1500);
+        }
+    }
+});
+
 let chats = {};
 let currentChatId = null;
 

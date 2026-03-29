@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} — Prompts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #ececec;
+            display: flex;
+            overflow: hidden;
+            color-scheme: dark;
+        }
+
+        /* ─── Sidebar ───────────────────────────── */
+        .sidebar {
+            width: 200px; min-width: 200px;
+            background: #0d0d0d;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex; flex-direction: column;
+            padding: 16px 0; height: 100vh; flex-shrink: 0;
+        }
+        .sb-collapse { display:flex; justify-content:flex-end; padding:0 14px 12px; }
+        .sb-collapse button { background:none; border:none; color:#555; cursor:pointer; font-size:13px; padding:4px 8px; border-radius:6px; transition:color 0.2s,background 0.2s; }
+        .sb-collapse button:hover { color:#aaa; background:rgba(255,255,255,0.05); }
+        .sb-nav { display:flex; flex-direction:column; gap:2px; padding:0 8px; }
+        .sb-item { display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:8px; text-decoration:none; color:#aaa; font-size:14px; font-weight:500; transition:background 0.15s,color 0.15s; cursor:pointer; border:none; background:none; width:100%; text-align:left; }
+        .sb-item i { width:18px; text-align:center; font-size:15px; }
+        .sb-item:hover { background:rgba(255,255,255,0.06); color:#eee; }
+        .sb-item.active { background:rgba(255,255,255,0.09); color:#fff; }
+        .sb-section-title { font-size:12px; font-weight:600; color:#555; padding:14px 20px 6px; display:flex; align-items:center; gap:6px; }
+        .sb-section-title i { font-size:11px; }
+        .sb-history-item { padding:7px 20px; font-size:13px; color:#888; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color 0.15s; }
+        .sb-history-item:hover { color:#ccc; }
+        .sb-see-all { padding:4px 20px 12px; font-size:13px; color:#4a7cf7; cursor:pointer; }
+        .sb-see-all:hover { text-decoration:underline; }
+
+        /* ─── Main ───────────────────────────────── */
+        .main { flex:1; overflow-y:auto; background:#000; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
+        .main::-webkit-scrollbar { width:6px; }
+        .main::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:10px; }
+
+        /* ─── Page Header ────────────────────────── */
+        .page-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding: 28px 40px 0;
+            margin-bottom: 24px;
+        }
+        .page-title-wrap {}
+        .page-title { font-size:26px; font-weight:700; display:flex; align-items:center; gap:12px; letter-spacing:-0.5px; }
+        .page-title i { color:#4a7cf7; }
+        .page-subtitle { color:#888; font-size:14px; margin-top:5px; }
+
+        /* ─── Toolbar ────────────────────────────── */
+        .toolbar {
+            display:flex; align-items:center; gap:12px;
+            padding: 0 40px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .search-wrap {
+            flex:1; display:flex; align-items:center; gap:10px;
+            background:#111; border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px; padding:9px 14px;
+            transition: border-color 0.2s;
+        }
+        .search-wrap:focus-within { border-color: rgba(74,124,247,0.5); }
+        .search-wrap i { color:#555; font-size:13px; }
+        .search-wrap input { background:none; border:none; color:#eee; font-size:14px; outline:none; font-family:'Inter',sans-serif; flex:1; }
+        .search-wrap input::placeholder { color:#555; }
+
+        .filter-tabs { display:flex; gap:6px; }
+        .filter-tab { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#888; transition:all 0.15s; }
+        .filter-tab:hover { color:#ddd; border-color:rgba(255,255,255,0.2); }
+        .filter-tab.active { background:#4a7cf7; color:#fff; border-color:#4a7cf7; }
+
+        .new-btn {
+            display:flex; align-items:center; gap:8px;
+            padding:9px 16px; border-radius:10px;
+            background:#4a7cf7; color:#fff; font-size:13px; font-weight:600;
+            border:none; cursor:pointer; transition:background 0.2s;
+            white-space:nowrap;
+        }
+        .new-btn:hover { background:#3b66d6; }
+
+        /* ─── Content Area ───────────────────────── */
+        .content { padding: 24px 40px 40px; }
+
+        /* ─── Section Heading ────────────────────── */
+        .section-heading {
+            display:flex; align-items:center; gap:10px;
+            font-size:13px; font-weight:600; color:#555;
+            text-transform:uppercase; letter-spacing:0.06em;
+            margin-bottom:16px; margin-top:8px;
+        }
+        .section-heading::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+        /* ─── Prompt Cards Grid ──────────────────── */
+        .prompts-grid {
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap:16px;
+            margin-bottom:36px;
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+        .prompt-card {
+            background:#111;
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:14px;
+            padding:18px 20px;
+            cursor:pointer;
+            transition:border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            position:relative;
+            overflow:hidden;
+        }
+        .prompt-card::before {
+            content:'';
+            position:absolute; top:0; left:0; right:0; height:2px;
+            background: var(--card-accent, #4a7cf7);
+            opacity:0; transition:opacity 0.2s;
+        }
+        .prompt-card:hover { border-color:rgba(255,255,255,0.18); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+        .prompt-card:hover::before { opacity:1; }
+
+        .card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+        .card-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 9px; border-radius:5px; font-size:11px; font-weight:600;
+            background:var(--badge-bg, rgba(74,124,247,0.12));
+            color:var(--badge-color, #7aa2f7);
+        }
+        .card-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.2s; }
+        .prompt-card:hover .card-actions { opacity:1; }
+        .card-action-btn {
+            width:28px; height:28px; border-radius:7px; border:none;
+            background:rgba(255,255,255,0.07); color:#888; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:12px;
+            transition:background 0.15s, color 0.15s;
+        }
+        .card-action-btn:hover { background:rgba(255,255,255,0.14); color:#eee; }
+        .card-action-btn.use-btn:hover { background:rgba(74,124,247,0.2); color:#7aa2f7; }
+
+        .card-title { font-size:14px; font-weight:600; color:#eee; margin-bottom:7px; }
+        .card-preview {
+            font-size:12.5px; color:#666; line-height:1.6;
+            display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+            font-family:monospace;
+        }
+        .card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); }
+        .card-meta { font-size:11px; color:#555; display:flex; align-items:center; gap:4px; }
+        .card-tags { display:flex; gap:5px; flex-wrap:wrap; }
+        .card-tag { font-size:11px; color:#555; background:rgba(255,255,255,0.05); padding:2px 7px; border-radius:4px; }
+
+        /* ─── History Table ──────────────────────── */
+        .history-table {
+            background:#111; border:1px solid rgba(255,255,255,0.08);
+            border-radius:14px; overflow:hidden;
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+        .history-table-header {
+            display:grid; grid-template-columns:2fr 1fr 1fr 120px;
+            padding:10px 18px; background:rgba(255,255,255,0.03);
+            border-bottom:1px solid rgba(255,255,255,0.06);
+            font-size:11px; font-weight:600; color:#555; text-transform:uppercase; letter-spacing:0.05em;
+        }
+        .history-row {
+            display:grid; grid-template-columns:2fr 1fr 1fr 120px;
+            padding:13px 18px; border-bottom:1px solid rgba(255,255,255,0.04);
+            align-items:center; cursor:pointer; transition:background 0.15s;
+        }
+        .history-row:last-child { border-bottom:none; }
+        .history-row:hover { background:rgba(255,255,255,0.03); }
+        .history-name { font-size:13px; color:#ccc; font-weight:500; display:flex; align-items:center; gap:8px; }
+        .history-name i { color:#555; font-size:12px; }
+        .history-meta { font-size:12px; color:#555; }
+        .history-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:600; }
+        .hb-sum { background:rgba(16,185,129,0.1); color:#34d399; }
+        .hb-qa  { background:rgba(139,92,246,0.12); color:#a78bfa; }
+        .hb-custom { background:rgba(245,158,11,0.1); color:#f59e0b; }
+        .history-actions { display:flex; gap:6px; justify-content:flex-end; }
+        .hist-btn { padding:4px 10px; border-radius:6px; border:none; font-size:12px; font-weight:500; cursor:pointer; transition:background 0.15s, color 0.15s; }
+        .hist-btn-use { background:rgba(74,124,247,0.15); color:#7aa2f7; }
+        .hist-btn-use:hover { background:rgba(74,124,247,0.3); }
+        .hist-btn-del { background:rgba(239,68,68,0.1); color:#f87171; }
+        .hist-btn-del:hover { background:rgba(239,68,68,0.25); }
+
+        /* ─── Custom Prompt Modal ────────────────── */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000;
+            display:none; align-items:center; justify-content:center;
+            backdrop-filter:blur(4px);
+        }
+        .modal-overlay.open { display:flex; }
+        .modal {
+            background:#111; border:1px solid rgba(255,255,255,0.12); border-radius:16px;
+            padding:28px; width:560px; max-width:95vw;
+            animation:scaleIn 0.2s ease-out;
+        }
+        @keyframes scaleIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+        .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .modal-title { font-size:17px; font-weight:700; color:#eee; display:flex; align-items:center; gap:10px; }
+        .modal-title i { color:#4a7cf7; }
+        .modal-close { background:none; border:none; color:#555; font-size:18px; cursor:pointer; padding:4px; border-radius:6px; transition:color 0.2s; }
+        .modal-close:hover { color:#eee; }
+        .modal-field { margin-bottom:16px; }
+        .modal-label { font-size:12px; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:7px; display:block; }
+        .modal-input, .modal-textarea, .modal-select {
+            width:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1);
+            border-radius:9px; padding:10px 14px; color:#eee; font-size:14px;
+            font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s;
+        }
+        .modal-input:focus, .modal-textarea:focus, .modal-select:focus { border-color:rgba(74,124,247,0.5); }
+        .modal-textarea { resize:vertical; min-height:140px; line-height:1.6; font-size:13px; }
+        .modal-select option { background:#1a1a1a; }
+        .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+        .modal-btn { padding:9px 20px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:background 0.2s; }
+        .modal-btn-cancel { background:rgba(255,255,255,0.07); color:#aaa; }
+        .modal-btn-cancel:hover { background:rgba(255,255,255,0.12); }
+        .modal-btn-save { background:#4a7cf7; color:#fff; }
+        .modal-btn-save:hover { background:#3b66d6; }
+
+        /* ─── Toast ──────────────────────────────── */
+        .toast {
+            position:fixed; bottom:28px; right:28px; z-index:2000;
+            background:#1e1e1e; border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px; padding:12px 18px; font-size:13px;
+            color:#eee; display:flex; align-items:center; gap:10px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.5);
+            transform:translateY(80px); opacity:0;
+            transition:transform 0.3s ease, opacity 0.3s ease;
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+        .toast i { color:#4a7cf7; }
+
+        /* ─── Empty state ─────────────────────────── */
+        .empty-state { text-align:center; padding:60px 20px; color:#444; }
+        .empty-state i { font-size:40px; margin-bottom:14px; display:block; }
+        .empty-state p { font-size:14px; }
+    </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sb-collapse">
+        <button title="Collapse"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
+    <nav class="sb-nav">
+        <a href="/" class="sb-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a href="/prompts" class="sb-item active"><i class="fa-solid fa-list-check"></i> Prompts</a>
+        <a href="/evaluation" class="sb-item"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
+        <a href="/models" class="sb-item"><i class="fa-solid fa-microchip"></i> Models</a>
+        <a href="/cicd" class="sb-item"><i class="fa-brands fa-github"></i> CI/CD Logs</a>
+        <a href="/settings" class="sb-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </nav>
+
+    <div class="sb-section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i></div>
+    <div id="sbRecentList">
+        <div class="sb-history-item">Inter-College Meeting</div>
+        <div class="sb-history-item">Doctor Patient Visit</div>
+    </div>
+    <div class="sb-see-all" onclick="setFilter('history')">See all</div>
+</aside>
+
+<!-- ══ MAIN ═══════════════════════════════════ -->
+<main class="main">
+
+    <div class="page-header">
+        <div class="page-title-wrap">
+            <h1 class="page-title"><i class="fa-solid fa-list-check"></i> Prompts</h1>
+            <p class="page-subtitle">Browse preset dialogue templates, manage custom prompts, and view your usage history</p>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search prompts by title or content..." oninput="filterCards()">
+        </div>
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-tab" onclick="setFilter('preset', this)">Preset</button>
+            <button class="filter-tab" onclick="setFilter('custom', this)">Custom</button>
+            <button class="filter-tab" onclick="setFilter('history', this)">History</button>
+        </div>
+        <button class="new-btn" onclick="openModal()">
+            <i class="fa-solid fa-plus"></i> New Prompt
+        </button>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+        <!-- Preset Prompts -->
+        <div id="presetSection">
+            <div class="section-heading"><i class="fa-solid fa-star"></i> Preset Dialogue Prompts</div>
+            <div class="prompts-grid" id="presetGrid"></div>
+        </div>
+
+        <!-- Custom Prompts -->
+        <div id="customSection">
+            <div class="section-heading"><i class="fa-solid fa-pen-nib"></i> Your Custom Prompts</div>
+            <div class="prompts-grid" id="customGrid">
+                <div class="empty-state" id="customEmpty">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>No custom prompts yet. Click <strong>New Prompt</strong> to create one.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div id="historySection">
+            <div class="section-heading"><i class="fa-solid fa-clock-rotate-left"></i> Usage History</div>
+            <div class="history-table">
+                <div class="history-table-header">
+                    <span>Prompt / Dialogue</span>
+                    <span>Type</span>
+                    <span>Used</span>
+                    <span style="text-align:right">Actions</span>
+                </div>
+                <div id="historyBody"></div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- ══ NEW PROMPT MODAL ══ -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title"><i class="fa-solid fa-pen-to-square"></i> <span id="modalTitleText">New Custom Prompt</span></div>
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label" for="modalName">Prompt Title</label>
+            <input type="text" id="modalName" class="modal-input" placeholder="e.g., Hospital Emergency Dialogue">
+        </div>
+        <div class="modal-field">
+            <label class="modal-label" for="modalCategory">Category</label>
+            <select id="modalCategory" class="modal-select">
+                <option value="Medical">Medical</option>
+                <option value="Business">Business</option>
+                <option value="Academic">Academic</option>
+                <option value="Technical">Technical</option>
+                <option value="Legal">Legal</option>
+                <option value="Customer Service">Customer Service</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label" for="modalDialogue">Dialogue Content</label>
+            <textarea id="modalDialogue" class="modal-textarea" placeholder="Doctor: Good morning..&#10;Patient: Good morning doctor..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="modal-btn modal-btn-save" onclick="savePrompt()">Save Prompt</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg"></span></div>
+
+<script>
+// ── PRESET DATA ─────────────────────────────────────────────────────────────
+const PRESETS = [
+    {
+        id: "p1",
+        title: "Inter-College Meeting",
+        category: "Academic",
+        accent: "#4a7cf7",
+        badgeBg: "rgba(74,124,247,0.12)",
+        badgeColor: "#7aa2f7",
+        tags: ["meeting", "collaboration", "academic"],
+        dialogue: `Dr. Mehta:\nGood morning everyone. Thank you for joining this inter-college meeting. Our main goal today is to discuss collaboration opportunities in academics and placements.\n\nProf. Sharma:\nGood morning. I believe we should start with student exchange programs. It will allow students to experience different teaching methods and resources.\n\nDr. Iyer:\nI agree. Additionally, we can collaborate on research projects. Many institutions lack funding individually, but together we can apply for larger grants.\n\nMs. Kapoor:\nFrom a placement perspective, joint placement drives can be very beneficial. Companies prefer larger talent pools, and this will increase opportunities for students.\n\nMr. Verma:\nAs a student, I think workshops and hackathons across colleges would also help us gain practical exposure and networking opportunities.\n\nDr. Mehta:\nExcellent. Thank you everyone for your valuable inputs. Let's reconvene next month with progress updates.`
+    },
+    {
+        id: "p2",
+        title: "Doctor–Patient Consultation",
+        category: "Medical",
+        accent: "#10b981",
+        badgeBg: "rgba(16,185,129,0.12)",
+        badgeColor: "#34d399",
+        tags: ["medical", "consultation", "health"],
+        dialogue: `Doctor:\nGood morning. Please have a seat. What brings you in today?\n\nPatient:\nGood morning, Doctor. I have been experiencing severe headaches for the past week, mostly in the mornings.\n\nDoctor:\nI see. Are the headaches accompanied by any nausea, light sensitivity, or visual disturbances?\n\nPatient:\nYes, I do get some light sensitivity. Sometimes my vision gets slightly blurry as well.\n\nDoctor:\nThank you for that detail. Have you been under any unusual stress lately, or have there been changes in your sleep patterns?\n\nPatient:\nYes, I have been working long hours on a project and sleeping only around four to five hours a night.\n\nDoctor:\nThat is likely contributing to the problem. I recommend a blood pressure check, and we will also run a few basic blood tests. For now, try to get at least seven hours of sleep and avoid screen time before bed.\n\nPatient:\nThank you, Doctor. I will follow your advice.`
+    },
+    {
+        id: "p3",
+        title: "Product Launch Team Standup",
+        category: "Business",
+        accent: "#f59e0b",
+        badgeBg: "rgba(245,158,11,0.12)",
+        badgeColor: "#fbbf24",
+        tags: ["business", "standup", "launch"],
+        dialogue: `Manager (Priya):\nGood morning team. Quick standup before the launch. Rishi, what is the deployment status?\n\nRishi (DevOps):\nAll containers are green. We deployed v2.3.1 to staging last night and ran smoke tests. Zero critical failures.\n\nManager (Priya):\nExcellent. Nisha, how is the marketing campaign?\n\nNisha (Marketing):\nEmail campaign is scheduled for 10 AM. Social media posts go live at noon. We have three influencer posts lined up for the afternoon.\n\nManager (Priya):\nPerfect. Arun, any support concerns we should be aware of?\n\nArun (Support):\nWe have pre-written responses for the top ten anticipated issues. The team is on standby from 9 AM till midnight.\n\nManager (Priya):\nGreat work everyone. Let us aim for a smooth launch. Daily syncs at 6 PM this week.`
+    },
+    {
+        id: "p4",
+        title: "AI Research Paper Discussion",
+        category: "Academic",
+        accent: "#8b5cf6",
+        badgeBg: "rgba(139,92,246,0.12)",
+        badgeColor: "#a78bfa",
+        tags: ["AI", "research", "NLP"],
+        dialogue: `Prof. Rao:\nLet us begin today's paper review. The paper proposes a new attention-free transformer architecture. Ananya, what are your initial thoughts?\n\nAnanya:\nThe main claim is impressive. They achieve comparable BLEU scores to standard transformers with forty percent less compute. However, I am concerned about the evaluation datasets.\n\nRahul:\nI noticed that too. They only tested on WMT14 EN-DE. The generalization to other language pairs is not established.\n\nProf. Rao:\nGood point. Siddharth, what about the complexity analysis?\n\nSiddharth:\nThey report O(n) complexity versus O(n squared) for standard attention. But the constant factor is much larger due to the custom CUDA kernels required.\n\nAnanya:\nSo in practice, the wall-clock time improvement may be smaller than claimed.\n\nProf. Rao:\nPrecisely. Let us write a replication request and test this on our multilingual corpus before drawing conclusions.`
+    },
+    {
+        id: "p5",
+        title: "Customer Support Escalation",
+        category: "Customer Service",
+        accent: "#ef4444",
+        badgeBg: "rgba(239,68,68,0.12)",
+        badgeColor: "#f87171",
+        tags: ["support", "escalation", "customer"],
+        dialogue: `Support Agent (Sara):\nThank you for calling PromptOps support. My name is Sara. How can I assist you today?\n\nCustomer (Mr. Joshi):\nHello Sara. I purchased the premium plan three weeks ago, but I still cannot access the advanced summarization features.\n\nSupport Agent (Sara):\nI apologize for the inconvenience, Mr. Joshi. Let me pull up your account. I can see your payment was processed successfully but there is a flag on your account type.\n\nCustomer (Mr. Joshi):\nThis is quite frustrating. I needed these features for a presentation last week.\n\nSupport Agent (Sara):\nI completely understand, and I sincerely apologize. I am escalating this to our billing team right now. You will receive an email confirmation within two hours, and I will personally follow up by end of day.\n\nCustomer (Mr. Joshi):\nThank you Sara. I appreciate you taking ownership of this.\n\nSupport Agent (Sara):\nOf course. We value your business and will make this right.`
+    },
+    {
+        id: "p6",
+        title: "Legal Contract Review",
+        category: "Legal",
+        accent: "#06b6d4",
+        badgeBg: "rgba(6,182,212,0.12)",
+        badgeColor: "#22d3ee",
+        tags: ["legal", "contract", "review"],
+        dialogue: `Lawyer (Ms. Desai):\nI have reviewed the software licensing agreement. There are three clauses that require your attention before signing.\n\nClient (Mr. Pillai):\nPlease go ahead.\n\nLawyer (Ms. Desai):\nFirst, clause 7.3 grants the vendor irrevocable rights to your anonymized usage data. I recommend adding a data deletion clause.\n\nClient (Mr. Pillai):\nThat is a concern. What does the second clause say?\n\nLawyer (Ms. Desai):\nClause 12.1 has an automatic renewal with a sixty-day cancellation notice. I suggest reducing this to thirty days.\n\nClient (Mr. Pillai):\nAgreed. And the third?\n\nLawyer (Ms. Desai):\nClause 18 has an indemnification clause that is broad. It could expose you to liability for third-party integrations you build on top of their platform.\n\nClient (Mr. Pillai):\nLet us propose amendments to all three. Can you draft the counter-proposal by Thursday?\n\nLawyer (Ms. Desai):\nCertainly. I will have it ready by Wednesday afternoon.`
+    }
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let customPrompts = JSON.parse(localStorage.getItem('promptops_custom') || '[]');
+let promptHistory = JSON.parse(localStorage.getItem('promptops_history') || '[]');
+let currentFilter = 'all';
+let editingId = null;
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll() {
+    renderPresets();
+    renderCustom();
+    renderHistory();
+    renderSidebarRecent();
+
+    const showPreset   = currentFilter === 'all' || currentFilter === 'preset';
+    const showCustom   = currentFilter === 'all' || currentFilter === 'custom';
+    const showHistory  = currentFilter === 'all' || currentFilter === 'history';
+    document.getElementById('presetSection').style.display  = showPreset  ? '' : 'none';
+    document.getElementById('customSection').style.display  = showCustom  ? '' : 'none';
+    document.getElementById('historySection').style.display = showHistory ? '' : 'none';
+}
+
+function renderPresets() {
+    const q = (document.getElementById('searchInput').value || '').toLowerCase();
+    const grid = document.getElementById('presetGrid');
+    const filtered = PRESETS.filter(p =>
+        !q || p.title.toLowerCase().includes(q) || p.dialogue.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+    );
+    grid.innerHTML = filtered.map(p => cardHTML(p, 'preset')).join('');
+}
+
+function renderCustom() {
+    const q = (document.getElementById('searchInput').value || '').toLowerCase();
+    const grid = document.getElementById('customGrid');
+    const emptyEl = document.getElementById('customEmpty');
+    const filtered = customPrompts.filter(p =>
+        !q || p.title.toLowerCase().includes(q) || p.dialogue.toLowerCase().includes(q)
+    );
+    if (filtered.length === 0) {
+        grid.innerHTML = emptyEl ? emptyEl.outerHTML : '';
+    } else {
+        grid.innerHTML = filtered.map(p => cardHTML(p, 'custom')).join('');
+    }
+}
+
+function cardHTML(p, type) {
+    const accent = p.accent || '#4a7cf7';
+    const badgeBg = p.badgeBg || 'rgba(74,124,247,0.12)';
+    const badgeColor = p.badgeColor || '#7aa2f7';
+    const preview = p.dialogue.replace(/\n/g, ' ').substring(0, 160) + '...';
+    const tagsHTML = (p.tags || []).map(t => `<span class="card-tag">${t}</span>`).join('');
+    const editBtn = type === 'custom'
+        ? `<button class="card-action-btn" title="Edit" onclick="editPrompt('${p.id}', event)"><i class="fa-solid fa-pen"></i></button>
+           <button class="card-action-btn" title="Delete" onclick="deletePrompt('${p.id}', event)"><i class="fa-solid fa-trash"></i></button>`
+        : '';
+    return `
+    <div class="prompt-card" style="--card-accent:${accent}" onclick="usePrompt('${p.id}','${type}')">
+        <div class="card-top">
+            <span class="card-badge" style="--badge-bg:${badgeBg};--badge-color:${badgeColor};background:${badgeBg};color:${badgeColor}">
+                <i class="fa-solid fa-tag"></i> ${p.category}
+            </span>
+            <div class="card-actions">
+                <button class="card-action-btn" title="Copy" onclick="copyPrompt('${p.id}','${type}',event)"><i class="fa-solid fa-copy"></i></button>
+                <button class="card-action-btn use-btn" title="Use in Dashboard" onclick="usePrompt('${p.id}','${type}')"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                ${editBtn}
+            </div>
+        </div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-preview">${preview}</div>
+        <div class="card-footer">
+            <div class="card-meta"><i class="fa-solid fa-align-left"></i> ${p.dialogue.split('\n').length} lines</div>
+            <div class="card-tags">${tagsHTML}</div>
+        </div>
+    </div>`;
+}
+
+function renderHistory() {
+    const body = document.getElementById('historyBody');
+    if (promptHistory.length === 0) {
+        body.innerHTML = `<div class="empty-state" style="padding:40px 20px"><i class="fa-regular fa-clock"></i><p>No history yet. Use prompts from the cards above.</p></div>`;
+        return;
+    }
+    body.innerHTML = promptHistory.slice().reverse().map((h, i) => {
+        const realIdx = promptHistory.length - 1 - i;
+        const typeBadge = h.type === 'summarize'
+            ? '<span class="history-badge hb-sum"><i class="fa-solid fa-list"></i> Summary</span>'
+            : h.type === 'qa'
+            ? '<span class="history-badge hb-qa"><i class="fa-solid fa-circle-question"></i> Q&A</span>'
+            : '<span class="history-badge hb-custom"><i class="fa-solid fa-pen"></i> Custom</span>';
+        return `
+        <div class="history-row" onclick="reuseHistory(${realIdx})">
+            <div class="history-name"><i class="fa-solid fa-file-lines"></i> ${h.title}</div>
+            <div class="history-meta">${typeBadge}</div>
+            <div class="history-meta">${h.date}</div>
+            <div class="history-actions">
+                <button class="hist-btn hist-btn-use" onclick="reuseHistory(${realIdx})">Use</button>
+                <button class="hist-btn hist-btn-del" onclick="deleteHistory(${realIdx},event)">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderSidebarRecent() {
+    const el = document.getElementById('sbRecentList');
+    const recent = promptHistory.slice(-3).reverse();
+    if (recent.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = recent.map(h => `<div class="sb-history-item">${h.title}</div>`).join('');
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+function findPrompt(id, type) {
+    return type === 'preset'
+        ? PRESETS.find(p => p.id === id)
+        : customPrompts.find(p => p.id === id);
+}
+
+function usePrompt(id, type) {
+    const p = findPrompt(id, type);
+    if (!p) return;
+    // Record to history
+    promptHistory.push({ title: p.title, dialogue: p.dialogue, type: 'summarize', date: new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) });
+    localStorage.setItem('promptops_history', JSON.stringify(promptHistory));
+    // Navigate to dashboard with the dialogue
+    sessionStorage.setItem('promptops_use_dialogue', p.dialogue);
+    window.location.href = '/';
+}
+
+function copyPrompt(id, type, event) {
+    event.stopPropagation();
+    const p = findPrompt(id, type);
+    if (!p) return;
+    navigator.clipboard.writeText(p.dialogue).then(() => showToast('Dialogue copied to clipboard!'));
+}
+
+function reuseHistory(idx) {
+    const h = promptHistory[idx];
+    if (!h) return;
+    sessionStorage.setItem('promptops_use_dialogue', h.dialogue);
+    window.location.href = '/';
+}
+
+function deleteHistory(idx, event) {
+    event.stopPropagation();
+    promptHistory.splice(idx, 1);
+    localStorage.setItem('promptops_history', JSON.stringify(promptHistory));
+    renderAll();
+    showToast('History entry removed.');
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(id) {
+    editingId = id || null;
+    document.getElementById('modalTitleText').textContent = id ? 'Edit Prompt' : 'New Custom Prompt';
+    if (id) {
+        const p = customPrompts.find(x => x.id === id);
+        document.getElementById('modalName').value      = p.title;
+        document.getElementById('modalCategory').value  = p.category;
+        document.getElementById('modalDialogue').value  = p.dialogue;
+    } else {
+        document.getElementById('modalName').value      = '';
+        document.getElementById('modalCategory').value  = 'Business';
+        document.getElementById('modalDialogue').value  = '';
+    }
+    document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function savePrompt() {
+    const title    = document.getElementById('modalName').value.trim();
+    const category = document.getElementById('modalCategory').value;
+    const dialogue = document.getElementById('modalDialogue').value.trim();
+    if (!title || !dialogue) { showToast('Please fill in the title and dialogue.'); return; }
+
+    if (editingId) {
+        const idx = customPrompts.findIndex(p => p.id === editingId);
+        if (idx > -1) { customPrompts[idx] = { ...customPrompts[idx], title, category, dialogue }; }
+    } else {
+        customPrompts.push({ id: 'c' + Date.now(), title, category, dialogue, accent:'#f59e0b', badgeBg:'rgba(245,158,11,0.12)', badgeColor:'#fbbf24', tags:[category.toLowerCase()] });
+    }
+    localStorage.setItem('promptops_custom', JSON.stringify(customPrompts));
+    closeModal();
+    renderAll();
+    showToast(editingId ? 'Prompt updated!' : 'Prompt saved!');
+}
+
+function editPrompt(id, event) {
+    event.stopPropagation();
+    openModal(id);
+}
+
+function deletePrompt(id, event) {
+    event.stopPropagation();
+    customPrompts = customPrompts.filter(p => p.id !== id);
+    localStorage.setItem('promptops_custom', JSON.stringify(customPrompts));
+    renderAll();
+    showToast('Prompt deleted.');
+}
+
+// ── FILTER / SEARCH ──────────────────────────────────────────────────────────
+function setFilter(name, el) {
+    currentFilter = name;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderAll();
+}
+
+function filterCards() { renderAll(); }
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', renderAll);
+</script>
+
+</body>
+</html>

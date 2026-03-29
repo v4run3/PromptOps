@@ -21,6 +21,30 @@ async def settings(request: Request):
         "version": "v1.0"
     })
 
+@router.get("/prompts", response_class=HTMLResponse)
+async def prompts(request: Request):
+    return templates.TemplateResponse("prompts.html", {
+        "request": request,
+        "project_name": "PromptOps",
+        "version": "v1.0"
+    })
+
+@router.get("/models", response_class=HTMLResponse)
+async def models(request: Request):
+    return templates.TemplateResponse("models.html", {
+        "request": request,
+        "project_name": "PromptOps",
+        "version": "v1.0"
+    })
+
+@router.get("/cicd", response_class=HTMLResponse)
+async def cicd_logs(request: Request):
+    return templates.TemplateResponse("cicd.html", {
+        "request": request,
+        "project_name": "PromptOps",
+        "version": "v1.0"
+    })
+
 @router.get("/evaluation", response_class=HTMLResponse)
 async def evaluation(request: Request):
     return templates.TemplateResponse("evaluation.html", {

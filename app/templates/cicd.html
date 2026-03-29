@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} — CI/CD Logs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ─── Reset & Layout ──────────────────────── */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000; color: #ececec;
+            display: flex; overflow: hidden;
+            color-scheme: dark;
+        }
+
+        /* ─── Sidebar ───────────────────────────── */
+        .sidebar {
+            width: 200px; min-width: 200px;
+            background: #0d0d0d;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex; flex-direction: column;
+            padding: 16px 0; height: 100vh; flex-shrink: 0;
+        }
+        .sb-collapse { display: flex; justify-content: flex-end; padding: 0 14px 12px; }
+        .sb-collapse button { background: none; border: none; color: #555; cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+        .sb-collapse button:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+        .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+        .sb-item { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px; text-decoration: none; color: #aaa; font-size: 14px; font-weight: 500; transition: background 0.15s, color 0.15s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+        .sb-item i { width: 18px; text-align: center; font-size: 15px; }
+        .sb-item:hover { background: rgba(255,255,255,0.06); color: #eee; }
+        .sb-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+
+        /* ─── Main Content ───────────────────────── */
+        .main {
+            flex: 1; padding: 36px 48px; overflow-y: auto; background: #000;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+
+        .page-header { margin-bottom: 30px; }
+        .page-title { font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
+        .page-title i { color: #ec4899; }
+        .page-subtitle { color: #888; font-size: 14px; margin-top: 6px; }
+
+        /* ─── GitHub Actions UI ──────────────────── */
+        .gh-box {
+            background: #0d1117; /* GitHub Dark */
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            max-width: 1200px;
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gh-header {
+            padding: 16px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .gh-header-left { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #c9d1d9; }
+        
+        .gh-header-right { display: flex; gap: 16px; color: #8b949e; font-size: 14px; }
+        .gh-header-right span { cursor: pointer; transition: color 0.15s; }
+        .gh-header-right span:hover { color: #c9d1d9; }
+
+        .gh-run {
+            display: flex; align-items: flex-start;
+            padding: 16px;
+            border-bottom: 1px solid #30363d;
+            background: #0d1117;
+            transition: background 0.1s;
+        }
+        .gh-run:hover { background: #161b22; }
+        .gh-run:last-child { border-bottom: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }
+
+        .run-icon { margin-right: 12px; margin-top: 2px; }
+        .icon-success { color: #238636; } /* GitHub Green */
+        .icon-fail { color: #da3633; }   /* GitHub Red */
+        .icon-spin { color: #dbab09; }   /* GitHub Yellow */
+
+        .run-body { flex: 1; }
+        .run-title { font-size: 15px; font-weight: 600; color: #c9d1d9; margin-bottom: 6px; display: inline-block; cursor: pointer; }
+        .run-title:hover { color: #58a6ff; text-decoration: underline; }
+
+        .run-meta { font-size: 12px; color: #8b949e; display: flex; align-items: center; gap: 6px; }
+        .run-repo { font-weight: 500; }
+        .run-commit { font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; background: rgba(110,118,129,0.4); padding: 2px 6px; border-radius: 6px; font-size: 11.5px; }
+        .run-branch-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2em; background: rgba(56,139,253,0.1); color: #58a6ff; font-weight: 500; font-size: 12px; border: 1px solid rgba(56,139,253,0.4); margin-left: 12px; }
+        .run-branch-badge i { font-size: 10px; }
+
+        .run-time { text-align: right; font-size: 12px; color: #8b949e; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+        
+        .loading { padding: 40px; text-align: center; color: #8b949e; font-size: 14px; }
+        .error { padding: 40px; text-align: center; color: #da3633; font-size: 14px; background: rgba(218,54,51,0.1); }
+    </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sb-collapse"><button><i class="fa-solid fa-angles-left"></i></button></div>
+    <nav class="sb-nav">
+        <a href="/" class="sb-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a href="/prompts" class="sb-item"><i class="fa-solid fa-list-check"></i> Prompts</a>
+        <a href="/evaluation" class="sb-item"><i class="fa-solid fa-scale-balanced"></i> Evaluation</a>
+        <a href="/models" class="sb-item"><i class="fa-solid fa-microchip"></i> Models</a>
+        <a href="/cicd" class="sb-item active"><i class="fa-brands fa-github"></i> CI/CD Logs</a>
+        <a href="/settings" class="sb-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </nav>
+</aside>
+
+<!-- ══ MAIN ═══════════════════════════════════ -->
+<main class="main">
+    <header class="page-header">
+        <h1 class="page-title"><i class="fa-brands fa-github"></i> CI/CD Logs</h1>
+        <p class="page-subtitle">Live GitHub Actions workflow runs for the v4run3/PromptOps repository</p>
+    </header>
+
+    <div class="gh-box">
+        <div class="gh-header">
+            <div class="gh-header-left">
+                <span id="runCount">0 workflow runs</span>
+            </div>
+            <div class="gh-header-right">
+                <span>Event <i class="fa-solid fa-caret-down"></i></span>
+                <span>Status <i class="fa-solid fa-caret-down"></i></span>
+                <span>Branch <i class="fa-solid fa-caret-down"></i></span>
+                <span>Actor <i class="fa-solid fa-caret-down"></i></span>
+            </div>
+        </div>
+
+        <div id="logsContainer">
+            <div class="loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Fetching logs from GitHub API...</div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function timeSince(date) {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return Math.floor(seconds) + " seconds ago";
+    }
+
+    function formatDuration(start, end) {
+        if (!end) return "Running";
+        const ds = Math.floor((new Date(end) - new Date(start)) / 1000);
+        const m = Math.floor(ds / 60);
+        const s = ds % 60;
+        return (m > 0 ? m + "m " : "") + s + "s";
+    }
+
+    async function fetchLogs() {
+        const container = document.getElementById('logsContainer');
+        try {
+            const response = await fetch('/api/cicd/logs');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            const runs = data.workflow_runs;
+            
+            document.getElementById('runCount').innerText = runs.length + ' workflow runs';
+            
+            if (runs.length === 0) {
+                container.innerHTML = `<div class="loading">No workflow runs found.</div>`;
+                return;
+            }
+
+            container.innerHTML = runs.map(run => {
+                const title = run.display_title || run.head_commit?.message?.split('\\n')[0] || "Update";
+                const commitHash = run.head_sha ? run.head_sha.substring(0, 7) : "Unknown";
+                const actor = run.actor ? run.actor.login : "Unknown";
+                
+                let iconHtml = '';
+                if (run.status === 'in_progress' || run.status === 'queued') {
+                    iconHtml = '<i class="fa-solid fa-circle-notch fa-spin icon-spin run-icon"></i>';
+                } else if (run.conclusion === 'success') {
+                    iconHtml = '<i class="fa-regular fa-circle-check icon-success run-icon"></i>';
+                } else {
+                    iconHtml = '<i class="fa-regular fa-circle-xmark icon-fail run-icon"></i>';
+                }
+
+                const timeStr = timeSince(run.created_at);
+                const durationStr = formatDuration(run.created_at, run.updated_at);
+                const workflowName = run.name || "CI Pipeline";
+
+                return `
+                <div class="gh-run">
+                    ${iconHtml}
+                    <div class="run-body">
+                        <div style="display:flex; align-items:center;">
+                            <a href="${run.html_url}" target="_blank" style="text-decoration:none;"><span class="run-title">${title}</span></a>
+                            <span class="run-branch-badge"><i class="fa-solid fa-code-branch"></i> ${run.head_branch}</span>
+                        </div>
+                        <div class="run-meta">
+                            <span class="run-repo">${workflowName} #${run.run_number}</span>: 
+                            Commit <span class="run-commit">${commitHash}</span> pushed by ${actor}
+                        </div>
+                    </div>
+                    <div class="run-time">
+                        <div title="${new Date(run.created_at).toLocaleString()}"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${timeStr}</div>
+                        <div><i class="fa-solid fa-stopwatch" style="margin-right:4px;"></i>${durationStr}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+        } catch (error) {
+            console.error("Fetch error:", error);
+            container.innerHTML = `<div class="error"><i class="fa-solid fa-triangle-exclamation"></i> Failed to load CI/CD logs from GitHub API.<br><br><code>${error.message}</code></div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchLogs);
+</script>
+</body>
+</html>

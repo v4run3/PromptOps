@@ -153,9 +153,26 @@ async def run_qa(request: QARequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"QA model error: {str(e)}")
 
+import httpx
+
 @router.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@router.get("/cicd/logs")
+async def get_cicd_logs():
+    """Fetch latest CI/CD workflow runs from GitHub Actions."""
+    url = "https://api.github.com/repos/v4run3/PromptOps/actions/runs"
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            # Send the request without auth (public repo)
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return {"workflow_runs": data.get("workflow_runs", [])[:15]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch CI/CD logs: {str(e)}")
 
 @router.post("/summarize", response_model=SummarizationResponse)
 async def run_summarization(request: SummarizationRequest):
