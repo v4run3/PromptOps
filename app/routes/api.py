@@ -24,6 +24,10 @@ async def health_check():
 async def run_summarization(request: SummarizationRequest):
     """Generate a summary for the given dialogue."""
     
+    full_text = request.dialogue
+    if request.prompt:
+        full_text = f"Instruction: {request.prompt}\n\nContext:\n{request.dialogue}"
+
     if request.model_choice == "pretrained":
         global pretrained_summarizer
         try:
@@ -35,7 +39,7 @@ async def run_summarization(request: SummarizationRequest):
                 pretrained_summarizer = (_tokenizer, _model)
 
             tokenizer, model = pretrained_summarizer
-            inputs = tokenizer(request.dialogue, return_tensors="pt", max_length=1024, truncation=True)
+            inputs = tokenizer(full_text, return_tensors="pt", max_length=1024, truncation=True)
             if request.length_profile == "short":
                 gen_kwargs = {"max_length": 60, "min_length": 10, "length_penalty": 0.5}
             else:
@@ -65,7 +69,7 @@ async def run_summarization(request: SummarizationRequest):
     
     try:
         summary = summarize(
-            request.dialogue,
+            full_text,
             checkpoint_path=CHECKPOINT_PATH,
             num_beams=request.num_beams
         )

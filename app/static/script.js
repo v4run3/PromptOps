@@ -46,9 +46,61 @@ function fillSample() {
     autoResize(ta);
 }
 
+let chats = {};
+let currentChatId = null;
+
+function loadChat(chatId) {
+    currentChatId = chatId;
+    document.querySelectorAll('.sb-history-item').forEach(el => el.classList.remove('active'));
+    const sbItem = document.getElementById(chatId);
+    if (sbItem) sbItem.classList.add('active');
+    
+    const chat = chats[chatId];
+    if (chat && chat.history.length > 0) {
+        const lastTurn = chat.history[chat.history.length - 1];
+        const ta = document.getElementById("dialogueInput");
+        if (ta) { ta.value = lastTurn.dialogue; ta.style.height = 'auto'; }
+        const ask = document.getElementById("askInput");
+        if (ask) ask.value = ""; 
+    }
+    renderOutput(chatId);
+}
+
+function renderOutput(chatId) {
+    const chat = chats[chatId];
+    const out = document.getElementById("summaryOutput");
+    if (!out) return;
+    out.innerHTML = "";
+    
+    chat.history.forEach((item) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "24px";
+        div.style.paddingBottom = "20px";
+        div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+        
+        let promptHtml = "";
+        if (item.prompt) {
+            promptHtml = `<div style="color:#aaa; font-size:13px; margin-bottom:8px;"><strong>Q:</strong> ${item.prompt}</div>`;
+        }
+        
+        div.innerHTML = `
+            ${promptHtml}
+            <div class="output-tag" style="display:inline-block">${item.model_version}</div>
+            <div style="color:#ddd; margin-top:8px; line-height:1.6; font-size:14.5px;">${item.summary}</div>
+        `;
+        out.appendChild(div);
+    });
+    const box = document.querySelector('.panel-output-box');
+    if (box) box.scrollTop = box.scrollHeight;
+}
+
 function clearAll() {
+    currentChatId = null;
+    document.querySelectorAll('.sb-history-item').forEach(el => el.classList.remove('active'));
     const ta = document.getElementById("dialogueInput");
     if (ta) { ta.value = ''; ta.style.height = 'auto'; }
+    const ask = document.getElementById("askInput");
+    if (ask) ask.value = '';
     const o = document.getElementById("summaryOutput");
     if (o) o.innerHTML = '';
     const tag = document.getElementById("outputModelTag");
@@ -60,6 +112,9 @@ let inferenceStats = { totalRequests: 0, totalLatency: 0, lastLatency: 0, modelL
 
 async function testSummarize() {
     const dialogue = (document.getElementById("dialogueInput") || {}).value || '';
+    const askInput = document.getElementById("askInput");
+    const prompt = askInput ? askInput.value : '';
+    
     const outputEl  = document.getElementById("summaryOutput");
     const tagEl     = document.getElementById("outputModelTag");
     const btn       = document.getElementById("summarizeBtn");
@@ -84,8 +139,19 @@ async function testSummarize() {
     btn.disabled = true;
     if (icon) icon.style.display = 'none';
     if (spinner) spinner.style.display = 'block';
-    if (outputEl) outputEl.innerHTML = '<div class="placeholder-text"><p><i class="fa-solid fa-circle-notch fa-spin"></i> Generating summary…</p></div>';
-    if (tagEl) tagEl.textContent = '';
+    
+    // Show loading at the bottom of the output
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "tempLoading";
+    loadingDiv.innerHTML = '<div class="placeholder-text"><p><i class="fa-solid fa-circle-notch fa-spin"></i> Generating summary…</p></div>';
+    if (outputEl) {
+        if (!currentChatId) outputEl.innerHTML = '';
+        outputEl.appendChild(loadingDiv);
+        const box = document.querySelector('.panel-output-box');
+        if (box) box.scrollTop = box.scrollHeight;
+    }
+    
+    if (tagEl && !currentChatId) tagEl.textContent = '';
 
     const startTime = performance.now();
 
@@ -93,7 +159,7 @@ async function testSummarize() {
         const res = await fetch('/api/summarize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dialogue, num_beams: 8, model_choice: model, length_profile: lenProfile })
+            body: JSON.stringify({ dialogue, prompt, num_beams: 8, model_choice: model, length_profile: lenProfile })
         });
         const data = await res.json();
         const endTime = performance.now();
@@ -106,24 +172,48 @@ async function testSummarize() {
         inferenceStats.modelLoaded = true;
         updateInferencePanel();
 
+        // Remove loading state
+        const temp = document.getElementById("tempLoading");
+        if (temp) temp.remove();
+
         if (res.ok) {
-            if (outputEl) outputEl.innerHTML = data.summary;
-            if (tagEl) tagEl.textContent = data.model_version;
-            
-            const chatList = document.getElementById("dynamicChatsList");
-            if (chatList) {
+            // Check if we need a new chat
+            if (!currentChatId) {
+                currentChatId = "chat_" + Date.now();
                 const words = dialogue.trim().split(/\s+/);
-                const chatName = words.slice(0, 3).join(" ") + (words.length > 3 ? "..." : "");
-                const newItem = document.createElement("div");
-                newItem.className = "sb-history-item";
-                newItem.textContent = chatName;
-                chatList.prepend(newItem);
+                const chatName = (words.length > 0 ? words.slice(0, 3).join(" ") : "New Chat") + (words.length > 3 ? "..." : "");
+                chats[currentChatId] = { name: chatName, history: [] };
+                
+                const chatList = document.getElementById("dynamicChatsList");
+                if (chatList) {
+                    const newItem = document.createElement("div");
+                    newItem.className = "sb-history-item active";
+                    newItem.id = currentChatId;
+                    newItem.textContent = chatName;
+                    newItem.onclick = () => loadChat(newItem.id);
+                    chatList.prepend(newItem);
+                }
             }
+            
+            // Push to history
+            chats[currentChatId].history.push({
+                dialogue: dialogue,
+                prompt: prompt,
+                summary: data.summary,
+                model_version: data.model_version
+            });
+            
+            renderOutput(currentChatId);
+            
+            if (tagEl) tagEl.textContent = data.model_version;
+            if (askInput) askInput.value = ''; // Reset prompt box after asking
         } else {
-            if (outputEl) outputEl.innerHTML = `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
+            if (outputEl) outputEl.innerHTML += `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
         }
     } catch {
-        if (outputEl) outputEl.innerHTML = '<span style="color:#ef4444"><i class="fa-solid fa-plug-circle-xmark"></i> Failed to connect.</span>';
+        const temp = document.getElementById("tempLoading");
+        if (temp) temp.remove();
+        if (outputEl) outputEl.innerHTML += '<span style="color:#ef4444"><i class="fa-solid fa-plug-circle-xmark"></i> Failed to connect.</span>';
         const el = document.getElementById("statHealth");
         if (el) { el.textContent = "● Offline"; el.style.color = "#f87171"; }
     } finally {
