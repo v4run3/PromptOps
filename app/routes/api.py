@@ -17,26 +17,139 @@ EVAL_RESULTS_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "re
 pretrained_summarizer = None
 qa_pipeline_instance = None
 
+import re as _re
+
+def _parse_speakers(dialogue: str):
+    """Parse dialogue into list of (speaker, text) tuples."""
+    turns = []
+    # Match lines like "Name:" or "Dr. Name:" followed by content
+    pattern = _re.compile(r'^([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z\.]*)*)\s*:\s*(.+)', _re.MULTILINE)
+    current_speaker = None
+    current_lines = []
+    for line in dialogue.split('\n'):
+        m = pattern.match(line.strip())
+        if m:
+            if current_speaker:
+                turns.append((current_speaker, ' '.join(current_lines).strip()))
+            current_speaker = m.group(1).strip()
+            current_lines = [m.group(2).strip()]
+        elif current_speaker and line.strip():
+            current_lines.append(line.strip())
+    if current_speaker:
+        turns.append((current_speaker, ' '.join(current_lines).strip()))
+    return turns
+
+
+def _answer_who_question(question: str, turns):
+    """Answer 'who' questions using speaker turn analysis."""
+    q = question.lower()
+
+    # "who initiated / started / opened / chaired / welcomed / began the meeting"
+    if any(kw in q for kw in ['initiat', 'start', 'open', 'chair', 'welcom', 'began', 'begin', 'called']):
+        if turns:
+            return turns[0][0]  # First speaker = meeting initiator
+
+    # "who concluded / ended / closed / wrapped up"
+    if any(kw in q for kw in ['conclud', 'ended', 'clos', 'wrap', 'last']):
+        if turns:
+            return turns[-1][0]
+
+    # "who mentioned / said / talked about / discussed X"
+    for kw in ['mention', 'said', 'talk', 'discuss', 'suggest', 'propos', 'recommend', 'agre', 'think']:
+        if kw in q:
+            # Extract the topic keyword after the verb
+            idx = q.find(kw)
+            topic = q[idx + len(kw):].strip().strip('?').strip()
+            if topic:
+                for speaker, text in turns:
+                    if any(word in text.lower() for word in topic.split() if len(word) > 3):
+                        return speaker
+            break
+
+    # "who raised / pointed out / highlighted concerns/challenges"
+    if any(kw in q for kw in ['concern', 'challeng', 'issue', 'problem', 'difficult']):
+        for speaker, text in turns:
+            if any(kw in text.lower() for kw in ['concern', 'challeng', 'issue', 'problem', 'difficult']):
+                return speaker
+
+    return None
+
+
 @router.post("/qa", response_model=QAResponse)
 async def run_qa(request: QARequest):
     """Answer a question based on the provided dialogue."""
     global qa_pipeline_instance
     if not request.dialogue.strip() or not request.question.strip():
         raise HTTPException(status_code=400, detail="Dialogue and question must not be empty.")
-        
+
     try:
+        turns = _parse_speakers(request.dialogue)
+        q_lower = request.question.lower()
+
+        # ── Strategy 1: Speaker-aware rule-based matching ──
+        if q_lower.startswith("who") and turns:
+            rule_answer = _answer_who_question(request.question, turns)
+            if rule_answer:
+                return QAResponse(answer=f"Answer: {rule_answer}", model_version="Dialogue Parser")
+
+        # ── Strategy 2: Keyword scan across all speaker turns ──
+        # Extract subject words from question (skip stop words)
+        stop = {'who', 'what', 'when', 'where', 'which', 'how', 'did', 'does', 'is', 'are', 'the', 'a', 'an', 'of', 'in', 'on', 'at', 'to', 'was', 'were', 'for', 'and', 'or'}
+        keywords = [w for w in _re.findall(r'\b[a-zA-Z]{4,}\b', q_lower) if w not in stop]
+
+        if keywords and turns:
+            best_speaker = None
+            best_count = 0
+            for speaker, text in turns:
+                count = sum(1 for kw in keywords if kw in text.lower())
+                if count > best_count:
+                    best_count = count
+                    best_speaker = speaker
+
+            if best_count >= 1 and q_lower.startswith("who") and best_speaker:
+                return QAResponse(answer=f"Answer: {best_speaker}", model_version="Dialogue Parser")
+
+            if best_count >= 2:
+                # Extract the matching sentence
+                for speaker, text in turns:
+                    kw_hits = sum(1 for kw in keywords if kw in text.lower())
+                    if kw_hits == best_count:
+                        # Find the most relevant sentence
+                        sentences = _re.split(r'[.!?]', text)
+                        for sent in sentences:
+                            if any(kw in sent.lower() for kw in keywords):
+                                ans = sent.strip()
+                                if ans:
+                                    return QAResponse(answer=f"Answer: {ans}", model_version="Dialogue Parser")
+
+        # ── Strategy 3: Fallback - Flan-T5 ──
         if qa_pipeline_instance is None:
-            from transformers import pipeline
-            qa_pipeline_instance = pipeline("question-answering", model="deepset/roberta-base-squad2")
-            
-        result = qa_pipeline_instance(question=request.question, context=request.dialogue)
-        
-        if result['score'] < 0.05:
-            answer = "Answer not found in the provided dialogue."
-        else:
-            answer = f"Answer: {result['answer']}"
-            
-        return QAResponse(answer=answer, model_version="deepset/roberta-base-squad2")
+            from transformers import T5ForConditionalGeneration, T5Tokenizer
+            import torch
+            _model_name = "google/flan-t5-base"
+            _tokenizer = T5Tokenizer.from_pretrained(_model_name)
+            _model     = T5ForConditionalGeneration.from_pretrained(_model_name)
+            _model.eval()
+            qa_pipeline_instance = (_tokenizer, _model)
+
+        tokenizer, model = qa_pipeline_instance
+        import torch
+
+        dialogue = request.dialogue[:1200]
+        prompt = (
+            f"Based on the dialogue below, answer the question with a short direct answer.\n\n"
+            f"Dialogue:\n{dialogue}\n\n"
+            f"Question: {request.question}\nAnswer:"
+        )
+        inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+        with torch.no_grad():
+            output_ids = model.generate(inputs["input_ids"], max_new_tokens=32, num_beams=4, early_stopping=True)
+        answer_text = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+        if not answer_text:
+            return QAResponse(answer="Answer not found in the provided dialogue.", model_version="google/flan-t5-base")
+        return QAResponse(answer=f"Answer: {answer_text}", model_version="google/flan-t5-base")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"QA model error: {str(e)}")
 

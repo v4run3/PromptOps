@@ -616,7 +616,7 @@
             <div class="ask-bar">
                 <div class="ask-input-wrap">
                     <i class="fa-solid fa-question" style="color:#aaa; font-size:14px; cursor:default;"></i>
-                    <input type="text" id="askInput" class="ask-input" placeholder="Ask a question about the dialogue...">
+                    <input type="text" id="askInput" class="ask-input" placeholder="Ask a question about the dialogue..." onkeydown="if(event.key==='Enter'){event.preventDefault();testQA();}">
                 </div>
                 <div class="model-pill-wrap">
                     <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
@@ -647,10 +647,6 @@
                 </button>
             </div>
             
-            <!-- Hidden inputs to maintain functionality -->
-            <select id="lengthSelect" style="display:none;">
-                <option value="long" selected>Long Dialogue</option>
-            </select>
         </div>
 
         <!-- Output Panel -->
