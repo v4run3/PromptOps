@@ -107,23 +107,7 @@
         }
         .sb-see-all:hover { text-decoration: underline; }
 
-        .sb-bottom {
-            margin-top: auto;
-            padding: 12px;
-        }
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            cursor: pointer;
-        }
+
 
         /* ─── Main ───────────────────────────────── */
         .main {
@@ -163,148 +147,179 @@
         .topbar-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
         .topbar-btn i { font-size: 12px; }
 
-        /* ─── Hero (centered content) ────────────── */
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 28px;
+        /* ─── Header ─────────────────────────────── */
+        .main-header {
             width: 100%;
-            max-width: 680px;
-            padding: 0 24px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            padding-top: 24px;
         }
 
-        /* Logo */
-        .hero-logo {
+        .header-logo {
             display: flex;
             align-items: center;
             gap: 14px;
             animation: fadeSlideDown 0.5s ease-out;
+            margin-top: 10px;
         }
-        .hero-logo-icon {
-            font-size: 38px;
+        .header-logo-icon {
+            font-size: 32px;
             background: linear-gradient(135deg, #fff 30%, #888 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .hero-logo-text {
-            font-size: 44px;
+        .header-logo-text {
+            font-size: 38px;
             font-weight: 700;
-            letter-spacing: -1.5px;
+            letter-spacing: -1px;
             background: linear-gradient(135deg, #ffffff 50%, #777 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* ─── Input Bar ──────────────────────────── */
-        .input-bar-wrap { width: 100%; animation: fadeSlideUp 0.5s ease-out 0.1s both; }
-
-        .input-bar {
+        /* ─── Panels Container ───────────────────── */
+        .panels-container {
             display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            background: #111;
-            border: 1px solid rgba(255,255,255,0.11);
-            border-radius: 14px;
-            padding: 12px 14px;
-            transition: border-color 0.25s, box-shadow 0.25s;
-        }
-        .input-bar:focus-within {
-            border-color: rgba(255,255,255,0.22);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.5);
+            gap: 20px;
+            width: 100%;
+            max-width: 1300px;
+            margin: 40px auto 0;
+            padding: 0 40px;
+            height: calc(100vh - 140px);
+            padding-bottom: 40px;
         }
 
-        .bar-left-icon {
-            color: #555;
-            font-size: 15px;
-            padding-bottom: 3px;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .bar-left-icon:hover { color: #999; }
-
-        .bar-input {
+        .panel {
             flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
+            background: #111; 
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        /* ─── Input Panel Specifics ──────────────── */
+        .panel-textarea {
+            flex: 1;
+            background: #181818;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 16px;
             color: #eee;
             font-size: 15px;
             font-family: 'Inter', sans-serif;
             resize: none;
-            line-height: 1.5;
-            min-height: 22px;
-            max-height: 180px;
-            overflow-y: auto;
+            outline: none;
+            transition: border-color 0.25s;
         }
-        .bar-input::placeholder { color: #888; }
-        .bar-input::-webkit-scrollbar { width: 6px; }
-        .bar-input::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+        .panel-textarea::placeholder { color: #666; }
+        .panel-textarea:focus { border-color: rgba(255,255,255,0.15); box-shadow: 0 0 0 1px rgba(255,255,255,0.05); }
+        .panel-textarea::-webkit-scrollbar { width: 6px; }
+        .panel-textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
 
-        .bar-right {
+        .ask-bar {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
+            justify-content: space-between;
+            background: #202020;
+            border-radius: 100px;
+            padding: 6px 6px 6px 20px;
         }
 
-        /* Model dropdown pill (replaces "Auto") */
+        .ask-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ask-btn:hover { color: #fff; }
+
         .model-pill-wrap { position: relative; display: flex; align-items: center; }
         .model-pill {
             appearance: none;
             -webkit-appearance: none;
-            background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #141414;
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 20px;
             color: #ccc;
             font-size: 13px;
             font-family: 'Inter', sans-serif;
             font-weight: 500;
-            padding: 6px 26px 6px 12px;
+            padding: 8px 32px 8px 16px;
             cursor: pointer;
             outline: none;
-            min-width: 110px;
-            transition: border-color 0.2s;
+            min-width: 140px;
+            transition: background 0.2s, color 0.2s;
         }
-        .model-pill:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
-        .model-pill option { background: #111; color: #eee; }
+        .model-pill:hover { background: #1a1a1a; color: #fff; }
+        .model-pill option { background: #141414; color: #eee; }
         .pill-chevron {
             position: absolute;
-            right: 8px;
-            font-size: 9px;
+            right: 12px;
+            font-size: 10px;
             color: #555;
             pointer-events: none;
         }
 
-        /* send button */
-        .send-btn {
-            width: 34px;
-            height: 34px;
-            background: #fff;
-            color: #000;
-            border: none;
-            border-radius: 50%;
+        .panel-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: -4px;
+        }
+        .summarize-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            font-size: 13px;
-            flex-shrink: 0;
-            transition: opacity 0.2s, transform 0.15s;
         }
-        .send-btn:hover { opacity: 0.85; transform: scale(1.05); }
-        .send-btn:active { transform: scale(0.95); }
-        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .summarize-btn:hover { background: rgba(255,255,255,0.05); }
+        .summarize-btn:active { transform: scale(0.97); }
+        .summarize-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* Output panel */
-        .output-panel {
-            background: #111;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-top: none;
-            border-radius: 0 0 14px 14px;
-            padding: 16px 18px;
+        /* ─── Output Panel Specifics ─────────────── */
+        .panel-output-box {
+            flex: 1;
+            background: #181818;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 24px;
+            color: #aaa;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-y: auto;
         }
+        
+        .panel-output-box::-webkit-scrollbar { width: 10px; }
+        .panel-output-box::-webkit-scrollbar-track { background: transparent; }
+        .panel-output-box::-webkit-scrollbar-thumb { 
+            background: #dddddd; 
+            border-radius: 6px; 
+            border: 2px solid #181818; 
+        }
+
         .output-tag {
             font-size: 11px;
             color: #4a7cf7;
@@ -316,36 +331,19 @@
             display: inline-block;
         }
         .output-tag:empty { display: none; }
-        #summaryOutput {
-            font-size: 14.5px;
-            line-height: 1.7;
-            color: #ddd;
-            min-height: 36px;
-        }
-        .placeholder-text { color: #3a3a3a; font-style: italic; font-size: 14px; }
 
-        /* ─── Action chips ───────────────────────── */
-        .action-chips {
-            display: flex;
-            gap: 10px;
-            animation: fadeSlideUp 0.5s ease-out 0.25s both;
+        .placeholder-text {
+            color: #888;
+            font-size: 14.5px;
         }
-        .chip {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 8px 16px;
-            border: 1px solid rgba(255,255,255,0.09);
-            border-radius: 20px;
-            background: transparent;
-            color: #777;
-            font-size: 13px;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s;
+        .placeholder-text p {
+            margin-bottom: 16px;
         }
-        .chip:hover { background: #111; color: #ccc; border-color: rgba(255,255,255,0.15); }
-        .chip i { font-size: 11px; }
+        .placeholder-text p:last-child {
+            margin-bottom: 0;
+        }
+
+
 
         /* ─── Metric pills (top-right) ───────────── */
         .metric-pills {
@@ -505,9 +503,8 @@
     <div class="sb-history-item">BERT-Seq2Seq Phase 3 eval</div>
     <div class="sb-see-all">See all</div>
 
-    <div class="sb-bottom">
-        <div class="user-avatar">S</div>
-    </div>
+    <div class="sb-section-title">Chats <i class="fa-solid fa-chevron-up" style="margin-left:auto;"></i></div>
+    <div id="dynamicChatsList"></div>
 </aside>
 
 <!-- ══ MAIN ══════════════════════════════════════ -->
@@ -575,77 +572,60 @@
         </div>
     </div>
 
-    <!-- Centered Hero -->
-    <div class="hero">
-
-        <!-- Logo -->
-        <div class="hero-logo">
-            <i class="fa-solid fa-bolt hero-logo-icon"></i>
-            <span class="hero-logo-text">{{ project_name }}</span>
+    <header class="main-header">
+        <div class="header-logo">
+            <i class="fa-solid fa-bolt header-logo-icon"></i>
+            <span class="header-logo-text">{{ project_name }}</span>
         </div>
+    </header>
 
-        <!-- Input bar -->
-        <div class="input-bar-wrap">
-            <div class="input-bar" id="inferenceBar">
-                <i class="fa-solid fa-microphone bar-left-icon"></i>
-
-                <textarea
-                    id="dialogueInput"
-                    class="bar-input"
-                    placeholder="What do you want to summarize?"
-                    rows="1"
-                    oninput="autoResize(this)"
-                ></textarea>
-
-                <div class="bar-right">
-                    <!-- Model pill (replaces "Auto") -->
-                    <div class="model-pill-wrap">
-                        <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
-                            <option value="" disabled selected hidden>Model ▾</option>
-                            <option value="custom">Custom (Seq2Seq)</option>
-                            <option value="pretrained">BART SAMSum</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down pill-chevron"></i>
-                    </div>
-                    
-                    <div class="model-select-wrap" style="margin-left: 10px;">
-                        <select id="lengthSelect" class="model-pill" onchange="onModelChange(this)">
-                            <option value="long" selected>Long Dialogue (Max 142)</option>
-                            <option value="short">Short Dialogue (Max 60)</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down pill-chevron"></i>
-                    </div>
-
-                    <!-- Send button -->
-                    <button class="send-btn" id="summarizeBtn" onclick="testSummarize()" title="Generate Summary">
-                        <i class="fa-solid fa-arrow-up" id="btnIcon"></i>
-                        <svg class="spinner" id="btnSpinner" viewBox="0 0 50 50">
-                            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-                        </svg>
-                    </button>
+    <div class="panels-container">
+        <!-- Input Panel -->
+        <div class="panel">
+            <h2 class="panel-title">Input</h2>
+            <textarea
+                id="dialogueInput"
+                class="panel-textarea"
+                placeholder="What do you want to summarize?"
+            ></textarea>
+            
+            <div class="ask-bar">
+                <button class="ask-btn"><i class="fa-solid fa-plus"></i> Ask anything</button>
+                <div class="model-pill-wrap">
+                    <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
+                        <option value="custom" selected>BERT-Seq2Seq Phase 3</option>
+                        <option value="pretrained">BART SAMSum</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down pill-chevron"></i>
                 </div>
             </div>
+            
+            <div class="panel-footer">
+                <button class="summarize-btn" id="summarizeBtn" onclick="testSummarize()">
+                    <span id="btnIcon">Summarize</span>
+                    <svg class="spinner" id="btnSpinner" viewBox="0 0 50 50" style="margin-left:8px; display:none; width: 16px; height: 16px;">
+                        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Hidden inputs to maintain functionality -->
+            <select id="lengthSelect" style="display:none;">
+                <option value="long" selected>Long Dialogue</option>
+            </select>
+        </div>
 
-            <!-- Output result -->
-            <div class="output-panel" id="outputPanel">
+        <!-- Output Panel -->
+        <div class="panel">
+            <h2 class="panel-title">Output</h2>
+            <div class="panel-output-box">
                 <div id="outputModelTag" class="output-tag"></div>
-                <div id="summaryOutput">
-                    <span class="placeholder-text">Run the model to see results...</span>
-                </div>
+                <div id="summaryOutput"></div>
             </div>
         </div>
-
-        <!-- Action chips -->
-        <div class="action-chips">
-            <button class="chip" onclick="fillSample()">
-                <i class="fa-solid fa-comment-dots"></i> Try a sample dialogue
-            </button>
-            <button class="chip" onclick="clearAll()">
-                <i class="fa-solid fa-rotate-left"></i> Clear
-            </button>
-        </div>
-
     </div>
+
+
 </main>
 
 </body>

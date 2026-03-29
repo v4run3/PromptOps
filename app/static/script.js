@@ -50,7 +50,7 @@ function clearAll() {
     const ta = document.getElementById("dialogueInput");
     if (ta) { ta.value = ''; ta.style.height = 'auto'; }
     const o = document.getElementById("summaryOutput");
-    if (o) o.innerHTML = '<span class="placeholder-text">Run the model to see results...</span>';
+    if (o) o.innerHTML = '';
     const tag = document.getElementById("outputModelTag");
     if (tag) tag.textContent = '';
 }
@@ -84,7 +84,7 @@ async function testSummarize() {
     btn.disabled = true;
     if (icon) icon.style.display = 'none';
     if (spinner) spinner.style.display = 'block';
-    if (outputEl) outputEl.innerHTML = '<span class="placeholder-text"><i class="fa-solid fa-circle-notch fa-spin"></i> Generating summary…</span>';
+    if (outputEl) outputEl.innerHTML = '<div class="placeholder-text"><p><i class="fa-solid fa-circle-notch fa-spin"></i> Generating summary…</p></div>';
     if (tagEl) tagEl.textContent = '';
 
     const startTime = performance.now();
@@ -109,6 +109,16 @@ async function testSummarize() {
         if (res.ok) {
             if (outputEl) outputEl.innerHTML = data.summary;
             if (tagEl) tagEl.textContent = data.model_version;
+            
+            const chatList = document.getElementById("dynamicChatsList");
+            if (chatList) {
+                const words = dialogue.trim().split(/\s+/);
+                const chatName = words.slice(0, 3).join(" ") + (words.length > 3 ? "..." : "");
+                const newItem = document.createElement("div");
+                newItem.className = "sb-history-item";
+                newItem.textContent = chatName;
+                chatList.prepend(newItem);
+            }
         } else {
             if (outputEl) outputEl.innerHTML = `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
         }
