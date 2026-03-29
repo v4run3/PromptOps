@@ -607,6 +607,14 @@
                         </select>
                         <i class="fa-solid fa-chevron-down pill-chevron"></i>
                     </div>
+                    
+                    <div class="model-select-wrap" style="margin-left: 10px;">
+                        <select id="lengthSelect" class="model-pill" onchange="onModelChange(this)">
+                            <option value="long" selected>Long Dialogue (Max 142)</option>
+                            <option value="short">Short Dialogue (Max 60)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down pill-chevron"></i>
+                    </div>
 
                     <!-- Send button -->
                     <button class="send-btn" id="summarizeBtn" onclick="testSummarize()" title="Generate Summary">

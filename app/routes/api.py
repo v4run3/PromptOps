@@ -36,14 +36,17 @@ async def run_summarization(request: SummarizationRequest):
 
             tokenizer, model = pretrained_summarizer
             inputs = tokenizer(request.dialogue, return_tensors="pt", max_length=1024, truncation=True)
+            if request.length_profile == "short":
+                gen_kwargs = {"max_length": 60, "min_length": 10, "length_penalty": 0.5}
+            else:
+                gen_kwargs = {"max_length": 142, "min_length": 30, "length_penalty": 1.0}
+
             summary_ids = model.generate(
                 inputs["input_ids"],
                 num_beams=request.num_beams,
-                max_length=142,
-                min_length=30,
-                length_penalty=1.0,
                 no_repeat_ngram_size=3,
-                early_stopping=True
+                early_stopping=True,
+                **gen_kwargs
             )
             summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
             return SummarizationResponse(

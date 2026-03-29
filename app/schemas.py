@@ -21,6 +21,7 @@ class SummarizationRequest(BaseModel):
     dialogue: str
     num_beams: Optional[int] = 8
     model_choice: Optional[str] = "custom"
+    length_profile: Optional[str] = "long"
 
     model_config = {"protected_namespaces": ()}
 

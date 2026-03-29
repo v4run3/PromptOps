@@ -66,7 +66,9 @@ async function testSummarize() {
     const icon      = document.getElementById("btnIcon");
     const spinner   = document.getElementById("btnSpinner");
     const select    = document.getElementById("modelSelect");
+    const lenSelect = document.getElementById("lengthSelect");
     const model     = select ? select.value : "custom";
+    const lenProfile= lenSelect ? lenSelect.value : "long";
 
     if (!dialogue.trim()) {
         if (outputEl) outputEl.innerHTML = '<span style="color:#ef4444"><i class="fa-solid fa-triangle-exclamation"></i> Please enter a dialogue first.</span>';
@@ -91,7 +93,7 @@ async function testSummarize() {
         const res = await fetch('/api/summarize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dialogue, num_beams: 8, model_choice: model })
+            body: JSON.stringify({ dialogue, num_beams: 8, model_choice: model, length_profile: lenProfile })
         });
         const data = await res.json();
         const endTime = performance.now();
