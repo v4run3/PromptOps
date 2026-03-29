@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from app.schemas import SummarizationRequest, SummarizationResponse
+from app.schemas import SummarizationRequest, SummarizationResponse, QARequest, QAResponse
 from model.inference import summarize
 
 
@@ -15,6 +15,30 @@ PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
 EVAL_RESULTS_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "results.json"
 
 pretrained_summarizer = None
+qa_pipeline_instance = None
+
+@router.post("/qa", response_model=QAResponse)
+async def run_qa(request: QARequest):
+    """Answer a question based on the provided dialogue."""
+    global qa_pipeline_instance
+    if not request.dialogue.strip() or not request.question.strip():
+        raise HTTPException(status_code=400, detail="Dialogue and question must not be empty.")
+        
+    try:
+        if qa_pipeline_instance is None:
+            from transformers import pipeline
+            qa_pipeline_instance = pipeline("question-answering", model="deepset/roberta-base-squad2")
+            
+        result = qa_pipeline_instance(question=request.question, context=request.dialogue)
+        
+        if result['score'] < 0.05:
+            answer = "Answer not found in the provided dialogue."
+        else:
+            answer = f"Answer: {result['answer']}"
+            
+        return QAResponse(answer=answer, model_version="deepset/roberta-base-squad2")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"QA model error: {str(e)}")
 
 @router.get("/health")
 async def health_check():
@@ -24,10 +48,6 @@ async def health_check():
 async def run_summarization(request: SummarizationRequest):
     """Generate a summary for the given dialogue."""
     
-    full_text = request.dialogue
-    if request.prompt:
-        full_text = f"Instruction: {request.prompt}\n\nContext:\n{request.dialogue}"
-
     if request.model_choice == "pretrained":
         global pretrained_summarizer
         try:
@@ -39,7 +59,7 @@ async def run_summarization(request: SummarizationRequest):
                 pretrained_summarizer = (_tokenizer, _model)
 
             tokenizer, model = pretrained_summarizer
-            inputs = tokenizer(full_text, return_tensors="pt", max_length=1024, truncation=True)
+            inputs = tokenizer(request.dialogue, return_tensors="pt", max_length=1024, truncation=True)
             if request.length_profile == "short":
                 gen_kwargs = {"max_length": 60, "min_length": 10, "length_penalty": 0.5}
             else:
@@ -69,7 +89,7 @@ async def run_summarization(request: SummarizationRequest):
     
     try:
         summary = summarize(
-            full_text,
+            request.dialogue,
             checkpoint_path=CHECKPOINT_PATH,
             num_beams=request.num_beams
         )

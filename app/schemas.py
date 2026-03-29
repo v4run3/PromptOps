@@ -19,12 +19,23 @@ class SummarizationRequest(BaseModel):
     """Request schema for summarization."""
 
     dialogue: str
-    prompt: Optional[str] = None
     num_beams: Optional[int] = 8
     model_choice: Optional[str] = "custom"
     length_profile: Optional[str] = "long"
 
     model_config = {"protected_namespaces": ()}
+
+
+class QARequest(BaseModel):
+    """Request schema for question answering."""
+    dialogue: str
+    question: str
+
+
+class QAResponse(BaseModel):
+    """Response schema for question answering."""
+    answer: str
+    model_version: str
 
 
 class SummarizationResponse(BaseModel):

@@ -254,6 +254,23 @@
             font-family: 'Inter', sans-serif;
         }
         .ask-input::placeholder { color: #aaa; }
+        
+        .ask-submit-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .ask-submit-btn:hover { opacity: 0.8; }
+        .ask-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .model-pill-wrap { position: relative; display: flex; align-items: center; }
         .model-pill {
@@ -598,8 +615,8 @@
             
             <div class="ask-bar">
                 <div class="ask-input-wrap">
-                    <i class="fa-solid fa-plus" style="color:#aaa; font-size:14px; cursor:default;"></i>
-                    <input type="text" id="askInput" class="ask-input" placeholder="Ask anything">
+                    <i class="fa-solid fa-question" style="color:#aaa; font-size:14px; cursor:default;"></i>
+                    <input type="text" id="askInput" class="ask-input" placeholder="Ask a question about the dialogue...">
                 </div>
                 <div class="model-pill-wrap">
                     <select id="modelSelect" class="model-pill" onchange="onModelChange(this)">
@@ -608,17 +625,20 @@
                     </select>
                     <i class="fa-solid fa-chevron-down pill-chevron"></i>
                 </div>
-                
-                <div class="model-pill-wrap" style="margin-left: 10px;">
+            </div>
+            
+            <div class="panel-footer" style="display:flex; justify-content:flex-end; align-items:center; gap:12px;">
+                <div class="model-pill-wrap" style="margin-right: auto;">
                     <select id="lengthSelect" class="model-pill" onchange="onModelChange(this)">
                         <option value="long" selected>Long Dialogue (Max 142)</option>
                         <option value="short">Short Dialogue (Max 60)</option>
                     </select>
                     <i class="fa-solid fa-chevron-down pill-chevron"></i>
                 </div>
-            </div>
-            
-            <div class="panel-footer">
+                
+                <button id="askBtn" onclick="testQA()" class="ask-submit-btn" title="Ask Question">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
                 <button class="summarize-btn" id="summarizeBtn" onclick="testSummarize()">
                     <span id="btnIcon">Summarize</span>
                     <svg class="spinner" id="btnSpinner" viewBox="0 0 50 50" style="margin-left:8px; display:none; width: 16px; height: 16px;">

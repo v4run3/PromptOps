@@ -107,13 +107,100 @@ function clearAll() {
     if (tag) tag.textContent = '';
 }
 
+// ── QA ─────────────────────────────────────────
+async function testQA() {
+    const dialogue = (document.getElementById("dialogueInput") || {}).value || '';
+    const askInput = document.getElementById("askInput");
+    const question = askInput ? askInput.value : '';
+    
+    const outputEl  = document.getElementById("summaryOutput");
+    const btn       = document.getElementById("askBtn");
+    const tagEl     = document.getElementById("outputModelTag");
+    
+    if (!dialogue.trim()) {
+        if (outputEl) outputEl.innerHTML = '<span style="color:#ef4444"><i class="fa-solid fa-triangle-exclamation"></i> Please enter a dialogue first.</span>';
+        if (document.getElementById("dialogueInput")) document.getElementById("dialogueInput").focus();
+        return;
+    }
+    if (!question.trim()) {
+        if (outputEl) outputEl.innerHTML = '<span style="color:#ef4444"><i class="fa-solid fa-triangle-exclamation"></i> Please enter a question to ask.</span>';
+        if (askInput) askInput.focus();
+        return;
+    }
+    
+    btn.disabled = true;
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "tempLoading";
+    loadingDiv.innerHTML = '<div class="placeholder-text"><p><i class="fa-solid fa-circle-notch fa-spin"></i> Finding answer…</p></div>';
+    if (outputEl) {
+        if (!currentChatId) outputEl.innerHTML = '';
+        outputEl.appendChild(loadingDiv);
+        const box = document.querySelector('.panel-output-box');
+        if (box) box.scrollTop = box.scrollHeight;
+    }
+    
+    if (tagEl && !currentChatId) tagEl.textContent = '';
+
+    try {
+        const res = await fetch('/api/qa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dialogue, question })
+        });
+        const data = await res.json();
+        
+        const temp = document.getElementById("tempLoading");
+        if (temp) temp.remove();
+
+        if (res.ok) {
+            if (!currentChatId) {
+                currentChatId = "chat_" + Date.now();
+                const words = dialogue.trim().split(/\s+/);
+                const chatName = (words.length > 0 ? words.slice(0, 3).join(" ") : "New Chat") + (words.length > 3 ? "..." : "");
+                chats[currentChatId] = { name: chatName, history: [] };
+                
+                const chatList = document.getElementById("dynamicChatsList");
+                if (chatList) {
+                    const newItem = document.createElement("div");
+                    newItem.className = "sb-history-item active";
+                    newItem.id = currentChatId;
+                    newItem.textContent = chatName;
+                    newItem.onclick = () => loadChat(newItem.id);
+                    chatList.prepend(newItem);
+                }
+            }
+            
+            chats[currentChatId].history.push({
+                dialogue: dialogue,
+                prompt: question,
+                summary: data.answer,
+                model_version: data.model_version
+            });
+            
+            renderOutput(currentChatId);
+            if (tagEl) tagEl.textContent = data.model_version;
+            if (askInput) askInput.value = '';
+        } else {
+            if (outputEl) outputEl.innerHTML += `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
+        }
+    } catch {
+        const temp = document.getElementById("tempLoading");
+        if (temp) temp.remove();
+        if (outputEl) outputEl.innerHTML += '<span style="color:#ef4444"><i class="fa-solid fa-plug-circle-xmark"></i> Failed to connect.</span>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+    }
+}
+
 // ── Summarize ──────────────────────────────────
 let inferenceStats = { totalRequests: 0, totalLatency: 0, lastLatency: 0, modelLoaded: false };
 
 async function testSummarize() {
     const dialogue = (document.getElementById("dialogueInput") || {}).value || '';
-    const askInput = document.getElementById("askInput");
-    const prompt = askInput ? askInput.value : '';
     
     const outputEl  = document.getElementById("summaryOutput");
     const tagEl     = document.getElementById("outputModelTag");
@@ -140,7 +227,6 @@ async function testSummarize() {
     if (icon) icon.style.display = 'none';
     if (spinner) spinner.style.display = 'block';
     
-    // Show loading at the bottom of the output
     const loadingDiv = document.createElement("div");
     loadingDiv.id = "tempLoading";
     loadingDiv.innerHTML = '<div class="placeholder-text"><p><i class="fa-solid fa-circle-notch fa-spin"></i> Generating summary…</p></div>';
@@ -159,25 +245,22 @@ async function testSummarize() {
         const res = await fetch('/api/summarize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dialogue, prompt, num_beams: 8, model_choice: model, length_profile: lenProfile })
+            body: JSON.stringify({ dialogue, num_beams: 8, model_choice: model, length_profile: lenProfile })
         });
         const data = await res.json();
         const endTime = performance.now();
         const latency = ((endTime - startTime) / 1000).toFixed(2);
 
-        // Update inference stats
         inferenceStats.totalRequests++;
         inferenceStats.lastLatency = latency;
         inferenceStats.totalLatency += parseFloat(latency);
         inferenceStats.modelLoaded = true;
         updateInferencePanel();
 
-        // Remove loading state
         const temp = document.getElementById("tempLoading");
         if (temp) temp.remove();
 
         if (res.ok) {
-            // Check if we need a new chat
             if (!currentChatId) {
                 currentChatId = "chat_" + Date.now();
                 const words = dialogue.trim().split(/\s+/);
@@ -195,10 +278,9 @@ async function testSummarize() {
                 }
             }
             
-            // Push to history
             chats[currentChatId].history.push({
                 dialogue: dialogue,
-                prompt: prompt,
+                prompt: "", 
                 summary: data.summary,
                 model_version: data.model_version
             });
@@ -206,7 +288,6 @@ async function testSummarize() {
             renderOutput(currentChatId);
             
             if (tagEl) tagEl.textContent = data.model_version;
-            if (askInput) askInput.value = ''; // Reset prompt box after asking
         } else {
             if (outputEl) outputEl.innerHTML += `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
         }
