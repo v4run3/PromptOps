@@ -39,9 +39,9 @@ async def run_summarization(request: SummarizationRequest):
             summary_ids = model.generate(
                 inputs["input_ids"],
                 num_beams=request.num_beams,
-                max_length=60,
-                min_length=10,
-                length_penalty=0.5,
+                max_length=142,
+                min_length=30,
+                length_penalty=1.0,
                 no_repeat_ngram_size=3,
                 early_stopping=True
             )
