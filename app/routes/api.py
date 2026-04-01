@@ -1,7 +1,9 @@
 import json
 import os
+import re as _re
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, HTTPException
 from app.schemas import SummarizationRequest, SummarizationResponse, QARequest, QAResponse
 from model.inference import summarize
@@ -16,8 +18,6 @@ EVAL_RESULTS_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "re
 
 pretrained_summarizer = None
 qa_pipeline_instance = None
-
-import re as _re
 
 def _parse_speakers(dialogue: str):
     """Parse dialogue into list of (speaker, text) tuples."""
@@ -153,7 +153,6 @@ async def run_qa(request: QARequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"QA model error: {str(e)}")
 
-import httpx
 
 @router.get("/health")
 async def health_check():
