@@ -242,6 +242,7 @@ async def metrics():
     model_name = "No model trained"
     phase = 0
 
+    results = {}
     if EVAL_RESULTS_PATH.exists():
         try:
             with open(EVAL_RESULTS_PATH, "r") as f:
@@ -260,6 +261,8 @@ async def metrics():
         "latest_score": round(rouge_l, 4),
         "model_version": model_name if has_model else "No checkpoint found",
         "phase": phase,
+        "checkpoint_exists": has_model,
+        "last_evaluated_at": results.get("timestamp") if EVAL_RESULTS_PATH.exists() else None,
     }
 
 

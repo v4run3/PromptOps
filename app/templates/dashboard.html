@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script defer src="/static/script.js?v=2.0"></script>
+    <script defer src="/static/script.js?v=4.0"></script>
     <style>
         /* ─── Reset ─────────────────────────────── */
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -373,6 +373,10 @@
         .metric-pills {
             display: flex;
             gap: 8px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
         }
         .mpill {
             display: flex;
@@ -384,6 +388,29 @@
             border-radius: 20px;
             font-size: 12px;
             color: #888;
+        }
+        .mpill-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+        .mpill-btn:hover .mpill { background: #151515; }
+        .mpill-btn.active .mpill {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.18);
+        }
+        .mpill.updating {
+            border-color: rgba(74,124,247,0.4);
+            box-shadow: 0 0 0 1px rgba(74,124,247,0.12);
+        }
+        .metric-pills:hover .mpill { background: #151515; }
+        .metric-pills.active .mpill {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.18);
         }
         .mpill strong { color: #eee; font-size: 13px; }
         .mpill i { color: #4a7cf7; font-size: 11px; }
@@ -521,14 +548,6 @@
             <i class="fa-solid fa-gear"></i> Settings
         </a>
     </nav>
-
-    <div class="sb-section-title"><i class="fa-solid fa-clock-rotate-left"></i> History <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i></div>
-    <div class="sb-history-item">Summarize ML dialogue</div>
-    <div class="sb-history-item">BERT-Seq2Seq Phase 3 eval</div>
-    <div class="sb-see-all">See all</div>
-
-    <div class="sb-section-title">Chats <i class="fa-solid fa-chevron-up" style="margin-left:auto;"></i></div>
-    <div id="dynamicChatsList"></div>
 </aside>
 
 <!-- ══ MAIN ══════════════════════════════════════ -->
@@ -537,9 +556,49 @@
     <!-- Top-right: metric pills + actions -->
     <div class="topbar-right">
         <div class="metric-pills">
-            <div class="mpill"><i class="fa-regular fa-file-code"></i> <strong id="activePrompts">--</strong></div>
-            <div class="mpill"><i class="fa-solid fa-star-half-stroke"></i> <strong id="latestScore">--</strong></div>
-            <div class="mpill"><i class="fa-solid fa-microchip"></i> <strong id="modelVersion" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">--</strong></div>
+            <button class="mpill-btn" id="promptsPill" onclick="window.location.href='/prompts'" title="Open prompts">
+                <span class="mpill"><i class="fa-regular fa-file-code"></i> <strong id="activePrompts">--</strong></span>
+            </button>
+            <button class="mpill-btn" id="scorePill" onclick="window.location.href='/evaluation'" title="Open evaluation">
+                <span class="mpill"><i class="fa-solid fa-star-half-stroke"></i> <strong id="latestScore">--</strong></span>
+            </button>
+        </div>
+
+        <div class="topbar-dropdown-wrap">
+            <button class="mpill-btn" id="metricsToggle" onclick="toggleMetricsPanel()" title="View dashboard metrics">
+                <span class="mpill"><i class="fa-solid fa-microchip"></i> <strong id="modelVersion" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">--</strong></span>
+            </button>
+            <div class="topbar-dropdown" id="metricsPanel">
+                <div class="tdd-title"><i class="fa-solid fa-gauge-high"></i> Dashboard Snapshot</div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Prompt Templates</span>
+                    <span class="tdd-value" id="metricPromptCount">--</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Latest ROUGE-L</span>
+                    <span class="tdd-value" id="metricRougeScore">--</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Eval Phase</span>
+                    <span class="tdd-value" id="metricPhase">--</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Checkpoint</span>
+                    <span class="tdd-value" id="metricCheckpoint">--</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Selected Model</span>
+                    <span class="tdd-value" id="metricSelectedModel">BERT-Seq2Seq Phase 3</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Summary Length</span>
+                    <span class="tdd-value" id="metricLengthProfile">Long Dialogue</span>
+                </div>
+                <div class="tdd-row">
+                    <span class="tdd-label">Last Eval</span>
+                    <span class="tdd-value" id="metricEvalTimestamp">--</span>
+                </div>
+            </div>
         </div>
 
         <!-- Inference Button + Dropdown -->

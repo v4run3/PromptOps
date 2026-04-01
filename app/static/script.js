@@ -1,13 +1,39 @@
 // ── Metrics ────────────────────────────────────
+let dashboardMetrics = null;
+let metricsRefreshTimer = null;
+
 async function loadMetrics() {
     try {
         const res = await fetch('/api/metrics');
         const d = await res.json();
-        animateValue("activePrompts", d.active_prompts);
+        const shouldAnimatePrompts = !dashboardMetrics || dashboardMetrics.active_prompts !== d.active_prompts;
+        const shouldFlashScore = !dashboardMetrics || dashboardMetrics.latest_score !== d.latest_score;
+        dashboardMetrics = d;
+        if (shouldAnimatePrompts) {
+            animateValue("activePrompts", d.active_prompts);
+            flashMetricPill("promptsPill");
+        } else {
+            const activePromptsEl = document.getElementById("activePrompts");
+            if (activePromptsEl) activePromptsEl.innerText = d.active_prompts;
+        }
         document.getElementById("latestScore").innerText = d.latest_score;
-        document.getElementById("modelVersion").innerText = d.model_version;
+        if (shouldFlashScore) flashMetricPill("scorePill");
+        syncDashboardStatus();
     } catch {
+        dashboardMetrics = null;
         ["activePrompts","latestScore","modelVersion"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = "Err";
+        });
+        [
+            "metricPromptCount",
+            "metricRougeScore",
+            "metricPhase",
+            "metricCheckpoint",
+            "metricSelectedModel",
+            "metricLengthProfile",
+            "metricEvalTimestamp"
+        ].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerText = "Err";
         });
@@ -36,6 +62,80 @@ function autoResize(el) {
 // ── Model change ───────────────────────────────
 function onModelChange(select) {
     select.style.color = select.value ? '#ccc' : '#555';
+    syncDashboardStatus();
+}
+
+function getSelectedModelLabel() {
+    const select = document.getElementById("modelSelect");
+    if (!select) return dashboardMetrics?.model_version || "--";
+    return select.options[select.selectedIndex]?.text || dashboardMetrics?.model_version || "--";
+}
+
+function getSelectedLengthLabel() {
+    const select = document.getElementById("lengthSelect");
+    if (!select) return "--";
+    const raw = select.options[select.selectedIndex]?.text || select.value || "--";
+    return raw.replace(/\s*\(.*?\)\s*/g, "").trim();
+}
+
+function formatEvalTimestamp(ts) {
+    if (!ts) return "Not available";
+    const date = new Date(ts);
+    if (Number.isNaN(date.getTime())) return ts;
+    return date.toLocaleString("en-IN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function syncDashboardStatus() {
+    const metrics = dashboardMetrics;
+    const currentModel = getSelectedModelLabel();
+    const currentLength = getSelectedLengthLabel();
+
+    const modelVersionEl = document.getElementById("modelVersion");
+    if (modelVersionEl) modelVersionEl.innerText = currentModel;
+
+    const promptCountEl = document.getElementById("metricPromptCount");
+    if (promptCountEl) promptCountEl.innerText = metrics ? metrics.active_prompts : "--";
+
+    const rougeEl = document.getElementById("metricRougeScore");
+    if (rougeEl) rougeEl.innerText = metrics ? metrics.latest_score : "--";
+
+    const phaseEl = document.getElementById("metricPhase");
+    if (phaseEl) phaseEl.innerText = metrics?.phase ? `Phase ${metrics.phase}` : "N/A";
+
+    const checkpointEl = document.getElementById("metricCheckpoint");
+    if (checkpointEl) {
+        checkpointEl.innerText = metrics ? (metrics.checkpoint_exists ? "Available" : "Missing") : "--";
+        checkpointEl.style.color = metrics ? (metrics.checkpoint_exists ? "#34d399" : "#f59e0b") : "";
+    }
+
+    const selectedModelEl = document.getElementById("metricSelectedModel");
+    if (selectedModelEl) selectedModelEl.innerText = currentModel;
+
+    const lengthEl = document.getElementById("metricLengthProfile");
+    if (lengthEl) lengthEl.innerText = currentLength;
+
+    const timestampEl = document.getElementById("metricEvalTimestamp");
+    if (timestampEl) timestampEl.innerText = metrics ? formatEvalTimestamp(metrics.last_evaluated_at) : "--";
+}
+
+function flashMetricPill(id) {
+    const pill = document.getElementById(id);
+    if (!pill) return;
+    const chip = pill.querySelector(".mpill");
+    if (!chip) return;
+    chip.classList.add("updating");
+    setTimeout(() => chip.classList.remove("updating"), 900);
+}
+
+function startMetricsRefresh() {
+    if (metricsRefreshTimer) window.clearInterval(metricsRefreshTimer);
+    metricsRefreshTimer = window.setInterval(loadMetrics, 30000);
 }
 
 // ── Sample dialogue ────────────────────────────
@@ -271,6 +371,7 @@ async function testSummarize() {
         inferenceStats.totalLatency += parseFloat(latency);
         inferenceStats.modelLoaded = true;
         updateInferencePanel();
+        syncDashboardStatus();
 
         const temp = document.getElementById("tempLoading");
         if (temp) temp.remove();
@@ -303,6 +404,8 @@ async function testSummarize() {
             renderOutput(currentChatId);
             
             if (tagEl) tagEl.textContent = data.model_version;
+            flashMetricPill("metricsToggle");
+            loadMetrics();
         } else {
             if (outputEl) outputEl.innerHTML += `<span style="color:#ef4444"><i class="fa-solid fa-circle-xmark"></i> ${data.detail}</span>`;
         }
@@ -335,11 +438,32 @@ function updateInferencePanel() {
 function toggleInferencePanel() {
     const panel = document.getElementById("inferencePanel");
     const btn = document.getElementById("inferenceToggle");
+    const metricsPanel = document.getElementById("metricsPanel");
+    const metricsBtn = document.getElementById("metricsToggle");
     const other = document.getElementById("privatePanel");
     const otherBtn = document.getElementById("privateToggle");
+    if (metricsPanel) metricsPanel.classList.remove("open");
+    if (metricsBtn) metricsBtn.classList.remove("active");
     if (other) { other.classList.remove("open"); otherBtn.classList.remove("active"); }
     panel.classList.toggle("open");
     btn.classList.toggle("active");
+}
+
+function toggleMetricsPanel() {
+    const panel = document.getElementById("metricsPanel");
+    const btn = document.getElementById("metricsToggle");
+    const inferencePanel = document.getElementById("inferencePanel");
+    const inferenceBtn = document.getElementById("inferenceToggle");
+    const privatePanel = document.getElementById("privatePanel");
+    const privateBtn = document.getElementById("privateToggle");
+
+    if (inferencePanel) inferencePanel.classList.remove("open");
+    if (inferenceBtn) inferenceBtn.classList.remove("active");
+    if (privatePanel) privatePanel.classList.remove("open");
+    if (privateBtn) privateBtn.classList.remove("active");
+
+    if (panel) panel.classList.toggle("open");
+    if (btn) btn.classList.toggle("active");
 }
 
 // ── Private Mode ───────────────────────────────
@@ -350,7 +474,11 @@ function togglePrivateMode() {
     const btn = document.getElementById("privateToggle");
     const other = document.getElementById("inferencePanel");
     const otherBtn = document.getElementById("inferenceToggle");
+    const metricsPanel = document.getElementById("metricsPanel");
+    const metricsBtn = document.getElementById("metricsToggle");
     if (other) { other.classList.remove("open"); otherBtn.classList.remove("active"); }
+    if (metricsPanel) metricsPanel.classList.remove("open");
+    if (metricsBtn) metricsBtn.classList.remove("active");
     panel.classList.toggle("open");
     btn.classList.toggle("active");
 }
@@ -399,6 +527,7 @@ document.addEventListener("click", e => {
         if (!wrap.contains(e.target)) {
             wrap.querySelector(".topbar-dropdown")?.classList.remove("open");
             wrap.querySelector(".topbar-btn")?.classList.remove("active");
+            wrap.querySelector(".metric-pills")?.classList.remove("active");
         }
     });
 });
@@ -415,15 +544,22 @@ async function checkHealth() {
     }
 }
 
+
 // ── Init ───────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     loadMetrics();
+    startMetricsRefresh();
     checkHealth();
+    syncDashboardStatus();
     const ta = document.getElementById("dialogueInput");
     if (ta) {
         ta.addEventListener("keydown", e => {
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); testSummarize(); }
         });
     }
+    ["modelSelect", "lengthSelect"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) onModelChange(el);
+    });
 });
 
