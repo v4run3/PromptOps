@@ -225,10 +225,108 @@ Live run status is viewable directly in the **CI/CD Logs** page of the dashboard
 
 ## Docker
 
+Build the container image from the project root:
+
 ```bash
-docker build -t promptops .
-docker run -p 8000:8000 promptops
+docker build -t promptops:latest .
 ```
+
+Run the container locally:
+
+```bash
+docker run --rm -p 8000:8000 promptops:latest
+```
+
+The application will be available at `http://127.0.0.1:8000` and the container health check targets `GET /health`.
+
+### Docker Notes
+
+- The image runs the FastAPI app on port `8000`
+- The `Dockerfile` copies only the runtime application assets needed by the server
+- Large model downloads may still happen on first request if Hugging Face artifacts are not already available
+- If you rely on `checkpoints/best_model.pt`, make sure that file exists before building or mount it separately in your deployment environment
+
+---
+
+## Kubernetes
+
+Starter manifests are available in the `k8s/` directory:
+
+- `k8s/namespace.yaml`
+- `k8s/deployment.yaml`
+- `k8s/service.yaml`
+- `k8s/ingress.yaml`
+
+### 1. Build the Image
+
+```bash
+docker build -t promptops:latest .
+```
+
+### 2. Make the Image Available to Your Cluster
+
+If you are using a local cluster, load or reuse the image depending on your setup.
+
+For `kind`:
+
+```bash
+kind load docker-image promptops:latest
+```
+
+For Docker Desktop Kubernetes, the local Docker image is usually available directly.
+
+### 3. Create the Namespace
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+```
+
+### 4. Deploy the Application
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+### 5. Verify the Deployment
+
+```bash
+kubectl get pods -n promptops
+kubectl rollout status deployment/promptops -n promptops
+kubectl get svc -n promptops
+```
+
+### 6. Access the App Locally
+
+Use port-forwarding for the quickest local test:
+
+```bash
+kubectl port-forward svc/promptops 8000:80 -n promptops
+```
+
+Then open:
+
+- `http://127.0.0.1:8000`
+- `http://127.0.0.1:8000/health`
+
+### 7. Enable Ingress
+
+If your cluster has an ingress controller installed:
+
+```bash
+kubectl apply -f k8s/ingress.yaml
+```
+
+The sample ingress uses the host `promptops.local`. For local testing, map that host to `127.0.0.1` in your system hosts file.
+
+### Kubernetes Notes
+
+- The deployment exposes container port `8000`
+- Readiness and liveness probes both call `/health`
+- The current manifest uses `image: promptops:latest`, which is suitable for local clusters
+- For a remote cluster, push the image to a container registry and update the image reference in `k8s/deployment.yaml`
+- If the app needs a trained checkpoint or persistent generated data, add a `PersistentVolumeClaim` and mount it into the container
+- If outbound internet is restricted, pre-bake or mount Hugging Face model files because the app may download them at runtime
 
 ---
 
