@@ -5,8 +5,11 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException
+from datetime import datetime
+
 from app.schemas import SummarizationRequest, SummarizationResponse, QARequest, QAResponse
 from model.inference import summarize
+from app.database import history_collection
 
 
 router = APIRouter(prefix="/api")
@@ -147,8 +150,20 @@ async def run_qa(request: QARequest):
         answer_text = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
 
         if not answer_text:
-            return QAResponse(answer="Answer not found in the provided dialogue.", model_version="google/flan-t5-base")
-        return QAResponse(answer=f"Answer: {answer_text}", model_version="google/flan-t5-base")
+            ans_res = QAResponse(answer="Answer not found in the provided dialogue.", model_version="google/flan-t5-base")
+        else:
+            ans_res = QAResponse(answer=f"Answer: {answer_text}", model_version="google/flan-t5-base")
+
+        # Save to DB
+        await history_collection.insert_one({
+            "type": "qa",
+            "dialogue": request.dialogue,
+            "prompt": request.question,
+            "summary": ans_res.answer,
+            "model_version": ans_res.model_version,
+            "timestamp": datetime.utcnow()
+        })
+        return ans_res
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"QA model error: {str(e)}")
@@ -202,10 +217,19 @@ async def run_summarization(request: SummarizationRequest):
                 **gen_kwargs
             )
             summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-            return SummarizationResponse(
+            res = SummarizationResponse(
                 summary=summary,
                 model_version="philschmid/bart-large-cnn-samsum"
             )
+            await history_collection.insert_one({
+                "type": "summarize",
+                "dialogue": request.dialogue,
+                "prompt": "",
+                "summary": res.summary,
+                "model_version": res.model_version,
+                "timestamp": datetime.utcnow()
+            })
+            return res
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Pretrained model error: {str(e)}")
 
@@ -222,12 +246,36 @@ async def run_summarization(request: SummarizationRequest):
             checkpoint_path=CHECKPOINT_PATH,
             num_beams=request.num_beams
         )
-        return SummarizationResponse(
+        res = SummarizationResponse(
             summary=summary,
             model_version="transformer-base-v1"
         )
+        await history_collection.insert_one({
+            "type": "summarize",
+            "dialogue": request.dialogue,
+            "prompt": "",
+            "summary": res.summary,
+            "model_version": res.model_version,
+            "timestamp": datetime.utcnow()
+        })
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/history")
+async def get_history():
+    """Fetch previous searches from MongoDB."""
+    try:
+        cursor = history_collection.find().sort("timestamp", -1).limit(50)
+        history = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            if "timestamp" in doc and doc["timestamp"]:
+                doc["timestamp"] = doc["timestamp"].isoformat()
+            history.append(doc)
+        return {"history": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/metrics")
 async def metrics():

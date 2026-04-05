@@ -164,6 +164,45 @@ document.addEventListener('DOMContentLoaded', () => {
 let chats = {};
 let currentChatId = null;
 
+async function fetchHistory() {
+    try {
+        const res = await fetch('/api/history');
+        if (res.ok) {
+            const data = await res.json();
+            const historyList = data.history || [];
+            
+            const chatList = document.getElementById("dynamicChatsList");
+            if (!chatList) return;
+            chatList.innerHTML = '';
+            
+            historyList.forEach(doc => {
+                const chatId = "db_" + doc._id;
+                const words = doc.dialogue.trim().split(/\s+/);
+                const chatName = (words.length > 0 ? words.slice(0, 3).join(" ") : "Search") + (words.length > 3 ? "..." : "");
+                
+                chats[chatId] = {
+                    name: chatName,
+                    history: [{
+                        dialogue: doc.dialogue,
+                        prompt: doc.prompt || "",
+                        summary: doc.summary,
+                        model_version: doc.model_version
+                    }]
+                };
+                
+                const newItem = document.createElement("div");
+                newItem.className = "sb-history-item";
+                newItem.id = chatId;
+                newItem.textContent = doc.type === 'qa' ? "[QA] " + chatName : chatName;
+                newItem.onclick = () => loadChat(newItem.id);
+                chatList.appendChild(newItem);
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch history:", e);
+    }
+}
+
 function loadChat(chatId) {
     currentChatId = chatId;
     document.querySelectorAll('.sb-history-item').forEach(el => el.classList.remove('active'));
@@ -551,6 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startMetricsRefresh();
     checkHealth();
     syncDashboardStatus();
+    fetchHistory();
     const ta = document.getElementById("dialogueInput");
     if (ta) {
         ta.addEventListener("keydown", e => {
