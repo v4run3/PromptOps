@@ -3,7 +3,7 @@
 import logging
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = "mongodb+srv://shivamchoughule2_db_user:uMhQtJR3BfGAcBSp@cluster0.lgtcwnk.mongodb.net/?appName=Cluster0"
+MONGO_URL = "mongodb+srv://shivamchoughule2_db_user:<db_password>@cluster0.lgtcwnk.mongodb.net/?appName=Cluster0"
 DB_NAME = "promptops_db"
 COLLECTION_HISTORY = "history"
 
